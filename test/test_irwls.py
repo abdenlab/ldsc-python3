@@ -1,10 +1,10 @@
-from __future__ import division
-from ldscore.irwls import IRWLS
 import unittest
+
 import numpy as np
-import nose
-from numpy.testing import assert_array_equal, assert_array_almost_equal
 from nose.tools import assert_raises
+from numpy.testing import assert_array_almost_equal, assert_array_equal
+
+from ldscore.irwls import IRWLS
 
 
 class Test_IRWLS_2D(unittest.TestCase):
@@ -15,12 +15,11 @@ class Test_IRWLS_2D(unittest.TestCase):
         self.w = np.abs(np.random.normal(size=4).reshape((4, 1)))
         self.w = self.w / np.sum(self.w)
         self.update_func = lambda x: np.ones((4, 1))
-        print 'w=\n', self.w
+        print("w=\n", self.w)
 
     def test_weight_2d(self):
         x = np.ones((4, 2))
-        assert_array_almost_equal(
-            IRWLS._weight(x, self.w), np.hstack([self.w, self.w]))
+        assert_array_almost_equal(IRWLS._weight(x, self.w), np.hstack([self.w, self.w]))
 
     def test_wls_2d(self):
         z = IRWLS.wls(self.x, self.y, self.w)
@@ -45,7 +44,7 @@ class Test_IRWLS_1D(unittest.TestCase):
         self.w = np.abs(np.random.normal(size=4).reshape((4, 1)))
         self.w = self.w / np.sum(self.w)
         self.update_func = lambda x: np.ones((4, 1))
-        print 'w=\n', self.w
+        print("w=\n", self.w)
 
     def test_weight_1d(self):
         assert_array_almost_equal(IRWLS._weight(self.x, self.w), self.w)

@@ -12,7 +12,7 @@ import ldscore.parse as ps
 import ldscore.sumstats as s
 from ldsc import parser
 
-DIR = os.path.dirname(__file__)
+DIR = str(os.path.dirname(__file__))
 N_REP = 500
 s._N_CHR = 2  # having to mock 22 files is annoying
 

@@ -3,10 +3,8 @@
 import argparse
 import bz2
 import gzip
-import os
 import sys
 import time
-import traceback
 
 import numpy as np
 import pandas as pd
@@ -763,12 +761,12 @@ def munge_sumstats(args, p=True):
         # they're read as floats
         signed_sumstat_cols = [k for k, v in list(cname_translation.items()) if v == "SIGNED_SUMSTAT"]
         dat_gen = pd.read_csv(
-            args.sumstats,
+            str(args.sumstats),
             delim_whitespace=True,
             header=0,
             compression=compression,
             usecols=list(cname_translation.keys()),
-            na_values=[".", "NA"],
+            # na_values=[".", "NA"],
             iterator=True,
             chunksize=args.chunksize,
             dtype={c: np.float64 for c in signed_sumstat_cols},

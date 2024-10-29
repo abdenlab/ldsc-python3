@@ -1,10 +1,10 @@
-
 import ldscore.regressions as reg
 import unittest
 import numpy as np
 import nose
 from numpy.testing import assert_array_equal, assert_array_almost_equal
 from nose.tools import assert_raises, assert_equal
+
 np.set_printoptions(precision=4)
 
 
@@ -43,8 +43,8 @@ def test_append_intercept():
 
 
 def test_remove_brackets():
-    x = ' [] [] asdf [] '
-    nose.tools.assert_equal(reg.remove_brackets(x), 'asdf')
+    x = " [] [] asdf [] "
+    nose.tools.assert_equal(reg.remove_brackets(x), "asdf")
 
 
 class Test_h2_obs_to_liab(unittest.TestCase):
@@ -84,19 +84,23 @@ class Test_Hsq_1D(unittest.TestCase):
         self.N = 9 * np.ones((4, 1))
         self.M = np.matrix((7))
         self.hsq = reg.Hsq(
-            self.chisq, self.ld, self.w_ld, self.N, self.M, n_blocks=3, intercept=1)
+            self.chisq, self.ld, self.w_ld, self.N, self.M, n_blocks=3, intercept=1
+        )
 
     def test_weights(self):
         hsq = 0.5
         w = reg.Hsq.weights(self.ld, self.w_ld, self.N, self.M, hsq)
         assert_array_equal(w.shape, self.ld.shape)
-        assert_array_almost_equal(
-            w[0, 0], 0.5 / np.square(1 + hsq * self.N / self.M))
+        assert_array_almost_equal(w[0, 0], 0.5 / np.square(1 + hsq * self.N / self.M))
         # test that it deals correctly with out-of-bounds h2
-        assert_array_almost_equal(reg.Hsq.weights(self.ld, self.w_ld, self.N, self.M, 1),
-                                  reg.Hsq.weights(self.ld, self.w_ld, self.N, self.M, 2))
-        assert_array_almost_equal(reg.Hsq.weights(self.ld, self.w_ld, self.N, self.M, 0),
-                                  reg.Hsq.weights(self.ld, self.w_ld, self.N, self.M, -1))
+        assert_array_almost_equal(
+            reg.Hsq.weights(self.ld, self.w_ld, self.N, self.M, 1),
+            reg.Hsq.weights(self.ld, self.w_ld, self.N, self.M, 2),
+        )
+        assert_array_almost_equal(
+            reg.Hsq.weights(self.ld, self.w_ld, self.N, self.M, 0),
+            reg.Hsq.weights(self.ld, self.w_ld, self.N, self.M, -1),
+        )
 
     def test_summarize_chisq(self):
         chisq = np.arange(100).reshape((100, 1))
@@ -106,15 +110,14 @@ class Test_Hsq_1D(unittest.TestCase):
 
     def test_summary(self):
         # not much to test; we can at least make sure no errors at runtime
-        self.hsq.summary(['asdf'])
+        self.hsq.summary(["asdf"])
         self.ld += np.arange(4).reshape((4, 1))
         self.chisq += np.arange(4).reshape((4, 1))
-        hsq = reg.Hsq(
-            self.chisq, self.ld, self.w_ld, self.N, self.M, n_blocks=3)
-        hsq.summary(['asdf'])
+        hsq = reg.Hsq(self.chisq, self.ld, self.w_ld, self.N, self.M, n_blocks=3)
+        hsq.summary(["asdf"])
         # test ratio printout with mean chi^2 < 1
         hsq.mean_chisq = 0.5
-        hsq.summary(['asdf'])
+        hsq.summary(["asdf"])
 
     def test_update(self):
         pass
@@ -138,11 +141,11 @@ class Test_Coef(unittest.TestCase):
         ld = (np.abs(np.random.normal(size=800)) + 1).reshape((400, 2))
         N = np.ones((400, 1)) * 1e5
         self.M = np.ones((1, 2)) * 1e7 / 2.0
-        chisq = 1 + 1e5 * (ld[:, 0] * self.hsq1 / self.M[0, 0] +
-                           ld[:, 1] * self.hsq2 / self.M[0, 1]).reshape((400, 1))
+        chisq = 1 + 1e5 * (
+            ld[:, 0] * self.hsq1 / self.M[0, 0] + ld[:, 1] * self.hsq2 / self.M[0, 1]
+        ).reshape((400, 1))
         w_ld = np.ones_like(chisq)
-        self.hsq_noint = reg.Hsq(
-            chisq, ld, w_ld, N, self.M, n_blocks=3, intercept=1)
+        self.hsq_noint = reg.Hsq(chisq, ld, w_ld, N, self.M, n_blocks=3, intercept=1)
         self.hsq_int = reg.Hsq(chisq, ld, w_ld, N, self.M, n_blocks=3)
         print(self.hsq_noint.summary())
         print(self.hsq_int.summary())
@@ -183,26 +186,27 @@ class Test_Hsq_2D(unittest.TestCase):
 
     def setUp(self):
         self.chisq = np.ones((17, 1)) * 4
-        self.ld = np.hstack(
-            [np.ones((17, 1)), np.arange(17).reshape((17, 1))]).reshape((17, 2))
+        self.ld = np.hstack([np.ones((17, 1)), np.arange(17).reshape((17, 1))]).reshape(
+            (17, 2)
+        )
         self.w_ld = np.ones((17, 1))
         self.N = 9 * np.ones((17, 1))
         self.M = np.matrix((7, 2))
         self.hsq = reg.Hsq(
-            self.chisq, self.ld, self.w_ld, self.N, self.M, n_blocks=3, intercept=1)
+            self.chisq, self.ld, self.w_ld, self.N, self.M, n_blocks=3, intercept=1
+        )
 
     def test_summary(self):
         # not much to test; we can at least make sure no errors at runtime
-        self.hsq.summary(['asdf', 'qwer'])
-	# change to random 7/30/2019 to avoid inconsistent singular matrix errors
-        self.ld += np.random.normal(scale=0.1, size=(17,2))
+        self.hsq.summary(["asdf", "qwer"])
+        # change to random 7/30/2019 to avoid inconsistent singular matrix errors
+        self.ld += np.random.normal(scale=0.1, size=(17, 2))
         self.chisq += np.arange(17).reshape((17, 1))
-        hsq = reg.Hsq(
-            self.chisq, self.ld, self.w_ld, self.N, self.M, n_blocks=3)
-        hsq.summary(['asdf', 'qwer'])
+        hsq = reg.Hsq(self.chisq, self.ld, self.w_ld, self.N, self.M, n_blocks=3)
+        hsq.summary(["asdf", "qwer"])
         # test ratio printout with mean chi^2 < 1
         hsq.mean_chisq = 0.5
-        hsq.summary(['asdf', 'qwer'])
+        hsq.summary(["asdf", "qwer"])
 
 
 class Test_Gencov_1D(unittest.TestCase):
@@ -217,8 +221,21 @@ class Test_Gencov_1D(unittest.TestCase):
         self.M = np.matrix((7))
         self.hsq1 = 0.5
         self.hsq2 = 0.6
-        self.gencov = reg.Gencov(self.z1, self.z2, self.ld, self.w_ld, self.N1, self.N2,
-                                 self.M, self.hsq1, self.hsq2, 1.0, 1.0, n_blocks=3, intercept_gencov=1)
+        self.gencov = reg.Gencov(
+            self.z1,
+            self.z2,
+            self.ld,
+            self.w_ld,
+            self.N1,
+            self.N2,
+            self.M,
+            self.hsq1,
+            self.hsq2,
+            1.0,
+            1.0,
+            n_blocks=3,
+            intercept_gencov=1,
+        )
 
     def test_weights(self):
         # check that hsq weights = gencov weights when z1 = z2
@@ -229,7 +246,8 @@ class Test_Gencov_1D(unittest.TestCase):
         M = 10
         h1, h2, rho_g = 0.5, 0.5, 0.5
         wg = reg.Gencov.weights(
-            ld, w_ld, N1, N2, M, h1, h2, rho_g, intercept_gencov=1.0)
+            ld, w_ld, N1, N2, M, h1, h2, rho_g, intercept_gencov=1.0
+        )
         wh = reg.Hsq.weights(ld, w_ld, N1, M, h1, intercept=1.0)
         assert_array_almost_equal(wg, wh)
 
@@ -238,12 +256,24 @@ class Test_Gencov_1D(unittest.TestCase):
 
     def test_summary(self):
         # not much to test; we can at least make sure no errors at runtime
-        self.gencov.summary(['asdf'])
+        self.gencov.summary(["asdf"])
         self.ld += np.arange(4).reshape((4, 1))
         self.z1 += np.arange(4).reshape((4, 1))
-        gencov = reg.Gencov(self.z1, self.z2, self.ld, self.w_ld, self.N1, self.N2,
-                            self.M, self.hsq1, self.hsq2, 1.0, 1.0, n_blocks=3)
-        gencov.summary(['asdf'])
+        gencov = reg.Gencov(
+            self.z1,
+            self.z2,
+            self.ld,
+            self.w_ld,
+            self.N1,
+            self.N2,
+            self.M,
+            self.hsq1,
+            self.hsq2,
+            1.0,
+            1.0,
+            n_blocks=3,
+        )
+        gencov.summary(["asdf"])
 
     def test_aggregate(self):
         z1z2 = np.ones((10, 1)) / 2
@@ -268,30 +298,63 @@ class Test_Gencov_2D(unittest.TestCase):
         self.M = np.matrix((700, 222))
         self.hsq1 = 0.5
         self.hsq2 = 0.6
-        self.gencov = reg.Gencov(self.z1, self.z2, self.ld, self.w_ld, self.N1, self.N2,
-                                 self.M, self.hsq1, self.hsq2, 1.0, 1.0, n_blocks=3, intercept_gencov=1)
+        self.gencov = reg.Gencov(
+            self.z1,
+            self.z2,
+            self.ld,
+            self.w_ld,
+            self.N1,
+            self.N2,
+            self.M,
+            self.hsq1,
+            self.hsq2,
+            1.0,
+            1.0,
+            n_blocks=3,
+            intercept_gencov=1,
+        )
 
     def test_summary(self):
         # not much to test; we can at least make sure no errors at runtime
-        self.gencov.summary(['asdf', 'qwer'])
+        self.gencov.summary(["asdf", "qwer"])
 
     def test_eq_hsq(self):
-        '''
+        """
         Gencov should be the same as hsq if z1 = z2, hsq + intercept_hsq are 0 and
         all intermediate rg's are > 0 (because Hsq.weights lower-bounds the hsq guess at 0
         but Gencov.weights lower-bounds the rho_g guess at -1). The setup below guarantees
         that all intermediate rho_g guesses will be 1
 
-        '''
+        """
         self.ld = np.abs(np.random.normal(size=100).reshape((50, 2))) + 2
         self.z1 = (np.sum(self.ld, axis=1) + 10).reshape((50, 1))
-        gencov = reg.Gencov(self.z1, self.z1, self.ld, self.w_ld, self.N1, self.N1,
-                            self.M, 0, 0, 0, 0, n_blocks=3, intercept_gencov=1)
-        hsq = reg.Hsq(np.square(self.z1), self.ld, self.w_ld,
-                      self.N1, self.M, n_blocks=3, intercept=1)
-        print(gencov.summary(['asdf', 'asdf']))
+        gencov = reg.Gencov(
+            self.z1,
+            self.z1,
+            self.ld,
+            self.w_ld,
+            self.N1,
+            self.N1,
+            self.M,
+            0,
+            0,
+            0,
+            0,
+            n_blocks=3,
+            intercept_gencov=1,
+        )
+        hsq = reg.Hsq(
+            np.square(self.z1),
+            self.ld,
+            self.w_ld,
+            self.N1,
+            self.M,
+            n_blocks=3,
+            intercept=1,
+        )
+        print(gencov.summary(["asdf", "asdf"]))
         print()
-        print(hsq.summary(['asdf', 'asdf']))
+        print(hsq.summary(["asdf", "asdf"]))
         assert_array_almost_equal(gencov.tot, hsq.tot)
         assert_array_almost_equal(gencov.tot_se, hsq.tot_se)
         assert_array_almost_equal(gencov.tot_cov, hsq.tot_cov)
@@ -308,8 +371,19 @@ class Test_RG_2D(unittest.TestCase):
         self.M = np.matrix((700, 222))
         self.hsq1 = 0.5
         self.hsq2 = 0.6
-        self.rg = reg.RG(self.z1, -self.z1, self.ld, self.w_ld, self.N1, self.N1,
-                         self.M, 1.0, 1.0, 0, n_blocks=20)
+        self.rg = reg.RG(
+            self.z1,
+            -self.z1,
+            self.ld,
+            self.w_ld,
+            self.N1,
+            self.N1,
+            self.M,
+            1.0,
+            1.0,
+            0,
+            n_blocks=20,
+        )
 
     def test_summary(self):
         # just make sure it doesn't encounter any errors at runtime
@@ -329,14 +403,13 @@ class Test_RG_Bad(unittest.TestCase):
         w_ld = np.ones((50, 1))
         N1 = 9 * np.ones((50, 1))
         M = np.matrix((-700))
-        rg = reg.RG(z1, -z1, ld, w_ld, N1, N1,
-                    M, 1.0, 1.0, 0, n_blocks=20)
+        rg = reg.RG(z1, -z1, ld, w_ld, N1, N1, M, 1.0, 1.0, 0, n_blocks=20)
         assert rg._negative_hsq
         # check no runtime errors when _negative_hsq is True
         print(rg.summary())
         print(rg.summary(silly=True))
-        assert rg.rg_ratio == 'NA'
-        assert rg.rg_se == 'NA'
-        assert rg.rg == 'NA'
-        assert rg.p == 'NA'
-        assert rg.z == 'NA'
+        assert rg.rg_ratio == "NA"
+        assert rg.rg_se == "NA"
+        assert rg.rg == "NA"
+        assert rg.p == "NA"
+        assert rg.z == "NA"

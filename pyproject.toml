@@ -17,8 +17,9 @@ bitarray = "^3.0.0"
 nose = "^1.3.7"
 
 [tool.poetry.scripts]
-ldsc = "ldscore.ldsc:main"
-munge_sumstats = "ldscore.munge_sumstats:main"
+ldsc = "ldsc:main"
+munge_sumstats = "munge_sumstats:main"
+make_annotation = "make_annot:main"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^4.0.1"

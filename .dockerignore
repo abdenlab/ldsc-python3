@@ -1,0 +1,50 @@
+# Ignore Git repository files
+.git
+.gitignore
+
+# Ignore Python virtual environments
+.venv/
+env/
+venv/
+
+# Ignore log files
+*.log
+
+# Ignore Python cache and compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Ignore pytest cache
+.pytest_cache/
+
+# Ignore mypy cache
+.mypy_cache/
+
+# Ignore coverage reports
+.coverage
+htmlcov/
+
+# Ignore temporary files
+*.swp
+*~
+*.tmp
+*.temp
+
+# Ignore build artifacts
+build/
+dist/
+.eggs/
+*.egg-info/
+
+# Ignore IDE/editor configurations
+.vscode/
+.idea/
+
+# Ignore macOS Finder files
+.DS_Store
+
+# Ignore other system files
+Thumbs.db
+desktop.ini
+

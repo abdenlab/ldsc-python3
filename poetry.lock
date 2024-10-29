@@ -540,7 +540,6 @@ files = [
 numpy = [
     {version = ">=1.22.4", markers = "python_version < \"3.11\""},
     {version = ">=1.23.2", markers = "python_version == \"3.11\""},
-    {version = ">=1.26.0", markers = "python_version >= \"3.12\""},
 ]
 python-dateutil = ">=2.8.2"
 pytz = ">=2020.1"
@@ -841,5 +840,5 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 
 [metadata]
 lock-version = "2.0"
-python-versions = ">3.10"
-content-hash = "d57b8f684311b65870ee64975a89ee23d9362c2c9acab9479e6194c7f52331a6"
+python-versions = ">3.10, <3.12"
+content-hash = "101f6830581734ad0f071d7fb86ca927bb7c3ebda7a49e00580a5ee05e544327"

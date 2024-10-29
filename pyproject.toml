@@ -13,6 +13,8 @@ python = "^3.10"
 numpy = "^2.1.2"
 pandas = "^2.2.3"
 scipy = "^1.14.1"
+bitarray = "^3.0.0"
+nose = "^1.3.7"
 
 [tool.poetry.scripts]
 ldsc = "ldscore.ldsc:main"

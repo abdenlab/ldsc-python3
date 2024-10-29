@@ -582,21 +582,21 @@ def munge_sumstats(args, p=True):
 
             cname_map[frq_u] = 'FRQ'
 
-	if args.daner_n:
-	    frq_u = [x for x in file_cnames if x.startswith('FRQ_U_')][0]
-	    cname_map[frq_u] = 'FRQ'
-	    try:
-	        dan_cas = clean_header(file_cnames[file_cnames.index('Nca')])
-	    except ValueError:
-	        raise ValueError('Could not find Nca column expected for daner-n format')
-	
-	    try:
-	        dan_con = clean_header(file_cnames[file_cnames.index('Nco')])
-	    except ValueError:
-	        raise ValueError('Could not find Nco column expected for daner-n format')
+        if args.daner_n:
+            frq_u = [x for x in file_cnames if x.startswith('FRQ_U_')][0]
+            cname_map[frq_u] = 'FRQ'
+            try:
+                dan_cas = clean_header(file_cnames[file_cnames.index('Nca')])
+            except ValueError:
+                raise ValueError('Could not find Nca column expected for daner-n format')
+
+            try:
+                dan_con = clean_header(file_cnames[file_cnames.index('Nco')])
+            except ValueError:
+                raise ValueError('Could not find Nco column expected for daner-n format')
 
             cname_map[dan_cas] = 'N_CAS'
-	    cname_map[dan_con] = 'N_CON'
+            cname_map[dan_con] = 'N_CON'
 
         cname_translation = {x: cname_map[clean_header(x)] for x in file_cnames if
                              clean_header(x) in cname_map}  # note keys not cleaned
@@ -629,16 +629,16 @@ def munge_sumstats(args, p=True):
                 raise ValueError('Could not find {C} column.'.format(C=c))
 
         # check aren't any duplicated column names in mapping
-	for field in cname_translation:
-	    numk = file_cnames.count(field)
-	    if numk > 1:
-		raise ValueError('Found {num} columns named {C}'.format(C=field,num=str(numk)))
+        for field in cname_translation:
+            numk = file_cnames.count(field)
+            if numk > 1:
+                raise ValueError('Found {num} columns named {C}'.format(C=field,num=str(numk)))
 
-        # check multiple different column names don't map to same data field
-        for head in list(cname_translation.values()):
-            numc = list(cname_translation.values()).count(head)
-	    if numc > 1:
-                raise ValueError('Found {num} different {C} columns'.format(C=head,num=str(numc)))
+            # check multiple different column names don't map to same data field
+            for head in list(cname_translation.values()):
+                numc = list(cname_translation.values()).count(head)
+            if numc > 1:
+                    raise ValueError('Found {num} different {C} columns'.format(C=head,num=str(numc)))
 
         if (not args.N) and (not (args.N_cas and args.N_con)) and ('N' not in list(cname_translation.values())) and\
                 (any(x not in list(cname_translation.values()) for x in ['N_CAS', 'N_CON'])):

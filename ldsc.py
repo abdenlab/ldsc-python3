@@ -10,6 +10,7 @@ LDSC is a command line tool for estimating
 """
 
 import argparse
+import logging
 import sys
 import time
 import traceback
@@ -42,7 +43,7 @@ MASTHEAD += "*******************************************************************
 pd.set_option("display.max_rows", 500)
 pd.set_option("display.max_columns", 500)
 pd.set_option("display.width", 1000)
-pd.set_option("precision", 4)
+pd.set_option("display.precision", 4)
 pd.set_option("max_colwidth", 1000)
 np.set_printoptions(linewidth=1000)
 np.set_printoptions(precision=4)
@@ -71,23 +72,38 @@ def _remove_dtype(x):
     return x
 
 
-class Logger(object):
+class Logger:
     """
-    Lightweight logging.
-    TODO: replace with logging module
-
+    Lightweight logging using the Python logging module.
     """
 
-    def __init__(self, fh):
-        self.log_fh = open(fh, "wb")
+    def __init__(self, log_file):
+        # Create a custom logger
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.INFO)
+
+        # Create handlers
+        file_handler = logging.FileHandler(log_file)
+        console_handler = logging.StreamHandler(sys.stdout)
+
+        # Set level for handlers
+        file_handler.setLevel(logging.INFO)
+        console_handler.setLevel(logging.INFO)
+
+        # Create formatters and add them to the handlers
+        formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+        file_handler.setFormatter(formatter)
+        console_handler.setFormatter(formatter)
+
+        # Add handlers to the logger
+        self.logger.addHandler(file_handler)
+        self.logger.addHandler(console_handler)
 
     def log(self, msg):
         """
-        Print to log file and stdout with a single command.
-
+        Log the message to the file and stdout.
         """
-        print(msg, file=self.log_fh)
-        print(msg)
+        self.logger.info(msg)
 
 
 def __filter__(fname, noun, verb, merge_obj):

@@ -70,7 +70,7 @@ def smart_merge(x, y):
     """Check if SNP columns are equal. If so, save time by using concat instead of merge."""
     if len(x) == len(y) and (x.index == y.index).all() and (x.SNP == y.SNP).all():
         x = x.reset_index(drop=True)
-        y = y.reset_index(drop=True).drop("SNP", 1)
+        y = y.reset_index(drop=True).drop(["SNP"], axis=1)
         out = pd.concat([x, y], axis=1)
     else:
         out = pd.merge(x, y, how="inner", on="SNP")
@@ -199,14 +199,14 @@ def _check_ld_condnum(args, log, ref_ld):
 
 def _check_variance(log, M_annot, ref_ld):
     """Remove zero-variance LD Scores."""
-    ii = ref_ld.ix[:, 1:].var() == 0  # NB there is a SNP column here
+    ii = ref_ld.iloc[:, 1:].var() == 0  # NB there is a SNP column here
     if ii.all():
         raise ValueError("All LD Scores have zero variance.")
     else:
         log.log("Removing partitioned LD Scores with zero variance.")
         ii_snp = np.array([True] + list(~ii))
         ii_m = np.array(~ii)
-        ref_ld = ref_ld.ix[:, ii_snp]
+        ref_ld = ref_ld.iloc[:, ii_snp]
         M_annot = M_annot[:, ii_m]
 
     return M_annot, ref_ld, ii
@@ -368,7 +368,7 @@ def estimate_h2(args, log):
     chisq = s(sumstats.Z**2)
     if chisq_max is not None:
         ii = np.ravel(chisq < chisq_max)
-        sumstats = sumstats.ix[ii, :]
+        sumstats = sumstats.iloc[ii, :]
         log.log(
             "Removed {M} SNPs with chi^2 > {C} ({N} SNPs remain)".format(
                 C=chisq_max, N=np.sum(ii), M=n_snp - np.sum(ii)
@@ -461,7 +461,7 @@ def estimate_rg(args, log):
             msg = "ERROR computing rg for phenotype {I}/{N}, from file {F}."
             log.log(msg.format(I=i + 2, N=len(rg_paths), F=rg_paths[i + 1]))
             ex_type, ex, tb = sys.exc_info()
-            log.log(traceback.format_exc(ex) + "\n")
+            log.log(ex)
             if len(RG) <= i:  # if exception raised before appending to RG
                 RG.append(None)
 

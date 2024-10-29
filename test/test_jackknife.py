@@ -3,7 +3,11 @@ import unittest
 import nose
 import numpy as np
 from nose.tools import assert_raises
-from numpy.testing import assert_array_almost_equal, assert_array_equal
+from numpy.testing import (
+    assert_almost_equal,
+    assert_array_almost_equal,
+    assert_array_equal,
+)
 
 import ldscore.jackknife as jk
 
@@ -22,10 +26,10 @@ class Test_Jackknife(unittest.TestCase):
     def test_jknife_1d(self):
         pseudovalues = np.atleast_2d(np.arange(10)).T
         (est, var, se, cov) = jk.Jackknife.jknife(pseudovalues)
-        nose.tools.assert_almost_equal(var, 0.91666667)
-        nose.tools.assert_almost_equal(est, 4.5)
-        nose.tools.assert_almost_equal(cov, var)
-        nose.tools.assert_almost_equal(se**2, var)
+        assert_almost_equal(var, 0.91666667)
+        assert_almost_equal(est, 4.5)
+        assert_almost_equal(cov, var)
+        assert_almost_equal(se**2, var)
         self.assertTrue(not np.any(np.isnan(cov)))
         assert_array_equal(cov.shape, (1, 1))
         assert_array_equal(var.shape, (1, 1))

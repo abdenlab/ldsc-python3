@@ -3,8 +3,8 @@ import unittest
 import nose
 import numpy as np
 import pandas as pd
-from numpy.testing import assert_allclose, assert_array_almost_equal, assert_array_equal
-from pandas.util.testing import assert_frame_equal, assert_series_equal
+from numpy.testing import assert_allclose
+from pandas.testing import assert_frame_equal, assert_series_equal
 
 import munge_sumstats as munge
 
@@ -322,6 +322,6 @@ class test_end_to_end(unittest.TestCase):
         self.args.signed_sumstats = "OR,0"
         nose.tools.assert_raises(ValueError, munge.munge_sumstats, self.args, p=False)
 
-    def test_bad_sumstats1(self):
+    def test_bad_sumstats2(self):
         self.args.signed_sumstats = "BETA,0"
         nose.tools.assert_raises(ValueError, munge.munge_sumstats, self.args, p=False)

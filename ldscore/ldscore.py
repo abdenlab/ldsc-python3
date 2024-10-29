@@ -402,7 +402,7 @@ class PlinkBEDFile(__GenotypeArrayInMemory__):
         n = self.n
         nru = self.nru
         slice = self.geno[2 * c * nru : 2 * (c + b) * nru]
-        X = np.array(slice.decode(self._bedcode), dtype="float64").reshape((b, nru)).T
+        X = np.array(list(slice.decode(self._bedcode)), dtype="float64").reshape((b, nru)).T
         X = X[0:n, :]
         Y = np.zeros(X.shape)
         for j in range(0, b):

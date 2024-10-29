@@ -88,7 +88,7 @@ class Logger:
 
         # Set level for handlers
         file_handler.setLevel(logging.INFO)
-        console_handler.setLevel(logging.INFO)
+        console_handler.setLevel(logging.WARN)
 
         # Create formatters and add them to the handlers
         formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")

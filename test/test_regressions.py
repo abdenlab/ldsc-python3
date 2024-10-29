@@ -2,7 +2,7 @@ import unittest
 
 import nose
 import numpy as np
-from nose.tools import assert_equal, assert_raises
+from nose.tools import assert_raises
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 
 import ldscore.regressions as reg
@@ -21,8 +21,8 @@ def test_update_separators():
     for ii in iis:
         s = np.arange(np.sum(ii) + 1)
         t = reg.update_separators(s, ii)
-        assert_equal(t[0], 0)
-        assert_equal(t[-1], len(ii))
+        assert t[0] == 0
+        assert t[-1] == len(ii)
         assert_array_equal(ids[ii][(s[1:-2])], ids[(t[1:-2])])
 
 

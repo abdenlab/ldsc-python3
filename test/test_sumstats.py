@@ -90,16 +90,16 @@ def test_read_annot():
 
 def test_valid_snps():
     x = {"AC", "AG", "CA", "CT", "GA", "GT", "TC", "TG"}
-    assert_equal(x, s.VALID_SNPS)
+    assert x == s.VALID_SNPS
 
 
 def test_bases():
     x = set(["A", "T", "G", "C"])
-    assert_equal(x, set(s.BASES))
+    assert x == set(s.BASES)
 
 
 def test_complement():
-    assert_equal(s.COMPLEMENT, {"A": "T", "T": "A", "C": "G", "G": "C"})
+    assert s.COMPLEMENT == {"A": "T", "T": "A", "C": "G", "G": "C"}
 
 
 def test_warn_len():
@@ -142,7 +142,7 @@ def test_match_alleles():
         "TGGT",
         "TGTG",
     }
-    assert_equal(m, s.MATCH_ALLELES)
+    assert m == s.MATCH_ALLELES
 
 
 def test_flip_alleles():
@@ -180,7 +180,7 @@ def test_flip_alleles():
         "TGGT": True,
         "TGTG": False,
     }
-    assert_equal(m, s.FLIP_ALLELES)
+    assert m == s.FLIP_ALLELES
 
 
 def test_strand_ambiguous():
@@ -198,7 +198,7 @@ def test_strand_ambiguous():
         "TC": False,
         "TG": False,
     }
-    assert_equal(m, s.STRAND_AMBIGUOUS)
+    assert m == s.STRAND_AMBIGUOUS
 
 
 @attr("rg")
@@ -454,7 +454,7 @@ class Test_Estimate(unittest.TestCase):
             DIR + "/simulate_test/ldscore/twold_firstfile," + DIR + "/simulate_test/ldscore/twold_secondfile"
         )
         z = s.estimate_h2(args, log)
-        assert_almost_equal(x.tot, y.tot)
+        assert x.tot == pytest.approx(y.tot, abs=1e-7)
         assert_array_almost_equal(y.cat, z.cat)
         assert_array_almost_equal(x.prop, y.prop)
         assert_array_almost_equal(y.coef, z.coef)
@@ -496,9 +496,9 @@ class Test_Estimate(unittest.TestCase):
             DIR + "/simulate_test/ldscore/twold_firstfile," + DIR + "/simulate_test/ldscore/twold_secondfile"
         )
         z = s.estimate_rg(args, log)[0]
-        assert_almost_equal(x.rg_ratio, y.rg_ratio)
-        assert_almost_equal(y.rg_jknife, z.rg_jknife)
-        assert_almost_equal(x.rg_se, y.rg_se)
+        assert x.rg_ratio == pytest.approx(y.rg_ratio, abs=1e-7)
+        assert y.rg_jknife == pytest.approx(z.rg_jknife, abs=1e-7)
+        assert x.rg_se == pytest.approx(y.rg_se, abs=1e-7)
 
     def test_no_check_alleles(self):
         args = parser.parse_args("")
@@ -509,9 +509,9 @@ class Test_Estimate(unittest.TestCase):
         x = s.estimate_rg(args, log)[0]
         args.no_check_alleles = True
         y = s.estimate_rg(args, log)[0]
-        assert_equal(x.rg_ratio, y.rg_ratio)
-        assert_almost_equal(x.rg_jknife, y.rg_jknife)
-        assert_equal(x.rg_se, y.rg_se)
+        assert x.rg_ratio == y.rg_ratio
+        assert x.rg_jknife == pytest.approx(y.rg_jknife, abs=1e-7)
+        assert x.rg_se == y.rg_se
 
     def test_twostep_h2(self):
         # make sure two step isn't going crazy

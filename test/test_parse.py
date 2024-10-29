@@ -1,11 +1,9 @@
 import os
-import unittest
 
-import nose
 import numpy as np
 import pandas as pd
 from nose.tools import *
-from numpy.testing import assert_array_almost_equal, assert_array_equal
+from numpy.testing import assert_array_equal
 
 from ldscore import parse as ps
 
@@ -22,9 +20,9 @@ def test_series_eq():
 
 
 def test_get_compression():
-    assert_equal(ps.get_compression("gz"), "gzip")
-    assert_equal(ps.get_compression("bz2"), "bz2")
-    assert_equal(ps.get_compression("asdf"), None)
+    assert ps.get_compression("gz") == "gzip"
+    assert ps.get_compression("bz2") == "bz2"
+    assert ps.get_compression("asdf") == None
 
 
 def test_read_cts():
@@ -40,7 +38,7 @@ def test_read_cts():
 
 def test_read_sumstats():
     x = ps.sumstats(os.path.join(DIR, "parse_test/test.sumstats"), dropna=True, alleles=True)
-    assert_equal(len(x), 1)
+    assert len(x) == 1
     assert_array_equal(x.SNP, "rs1")
     assert_raises(ValueError, ps.sumstats, os.path.join(DIR, "parse_test/test.l2.ldscore.gz"))
 
@@ -60,15 +58,15 @@ class Test_ldscore(unittest.TestCase):
 
     def test_ldscore(self):
         x = ps.ldscore(os.path.join(DIR, "parse_test/test"))
-        assert_equal(list(x["SNP"]), ["rs" + str(i) for i in range(1, 23)])
-        assert_equal(list(x["AL2"]), list(range(1, 23)))
-        assert_equal(list(x["BL2"]), list(range(2, 46, 2)))
+        assert list(x["SNP"]) == ["rs" + str(i) for i in range(1, 23)]
+        assert list(x["AL2"]) == list(range(1, 23))
+        assert list(x["BL2"]) == list(range(2, 46, 2))
 
     def test_ldscore_loop(self):
         x = ps.ldscore(os.path.join(DIR, "parse_test/test"), 2)
-        assert_equal(list(x["SNP"]), ["rs" + str(i) for i in range(1, 3)])
-        assert_equal(list(x["AL2"]), list(range(1, 3)))
-        assert_equal(list(x["BL2"]), list(range(2, 6, 2)))
+        assert list(x["SNP"]) == ["rs" + str(i) for i in range(1, 3)]
+        assert list(x["AL2"]) == list(range(1, 3))
+        assert list(x["BL2"]) == list(range(2, 6, 2))
 
     def test_ldscore_fromlist(self):
         fh = os.path.join(DIR, "parse_test/test")
@@ -106,7 +104,7 @@ class Test_Fam(unittest.TestCase):
 
     def test_fam(self):
         fam = ps.PlinkFAMFile(os.path.join(DIR, "plink_test/plink.fam"))
-        assert_equal(fam.n, 5)
+        assert fam.n == 5
         correct = np.array(["per0", "per1", "per2", "per3", "per4"])
         assert_array_equal(fam.IDList.values.reshape((5,)), correct)
 
@@ -118,7 +116,7 @@ class Test_Bim(unittest.TestCase):
 
     def test_bim(self):
         bim = ps.PlinkBIMFile(os.path.join(DIR, "plink_test/plink.bim"))
-        assert_equal(bim.n, 8)
+        assert bim.n == 8
         correct = np.array(["rs_0", "rs_1", "rs_2", "rs_3", "rs_4", "rs_5", "rs_6", "rs_7"])
         assert_array_equal(bim.IDList.values.reshape(8), correct)
 

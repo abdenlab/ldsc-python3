@@ -15,7 +15,7 @@ def test_getBlockLefts():
         ((1, 4, 6, 7, 7, 8), 2, (0, 1, 1, 2, 2, 2)),
     ]
     for coords, max_dist, correct in l:
-        assert np.all(ld.getBlockLefts(coords, max_dist) == correct)
+        assert np.all(ld.get_block_lefts(coords, max_dist) == correct)
 
 
 def test_block_left_to_right():
@@ -54,7 +54,7 @@ class test_bed(unittest.TestCase):
 
     def test_filter_snps(self):
         keep_snps = [1, 4]
-        bed = ld.PlinkBEDFile("test/plink_test/plink.bed", self.N, self.bim, keep_snps=keep_snps)
+        bed = ld.PlinkBEDFile("test/plink_test/plink.bed", self.N, self.bim, keep_snps=np.array(keep_snps))
         assert bed.m == 1
         assert bed.n == 5
         # pad bits are initialized with random memory --> can't test them
@@ -62,7 +62,7 @@ class test_bed(unittest.TestCase):
 
     def test_filter_indivs(self):
         keep_indivs = [0, 1]
-        bed = ld.PlinkBEDFile("test/plink_test/plink.bed", self.N, self.bim, keep_indivs=keep_indivs)
+        bed = ld.PlinkBEDFile("test/plink_test/plink.bed", self.N, self.bim, keep_indivs=np.array(keep_indivs))
         assert bed.m == 2
         assert bed.n == 2
         # pad bits are initialized with random memory --> can't test them
@@ -76,8 +76,8 @@ class test_bed(unittest.TestCase):
             "test/plink_test/plink.bed",
             self.N,
             self.bim,
-            keep_snps=keep_snps,
-            keep_indivs=keep_indivs,
+            keep_snps=np.array(keep_snps),
+            keep_indivs=np.array(keep_indivs),
         )
         assert bed.m == 1
         assert bed.n == 2
@@ -91,17 +91,17 @@ class test_bed(unittest.TestCase):
     @nose.tools.raises(ValueError)
     def test_nextSNPs_errors1(self):
         bed = ld.PlinkBEDFile("test/plink_test/plink.bed", self.N, self.bim)
-        bed.nextSNPs(0)
+        bed.next_snps(0)
 
     @nose.tools.raises(ValueError)
     def test_nextSNPs_errors2(self):
         bed = ld.PlinkBEDFile("test/plink_test/plink.bed", self.N, self.bim)
-        bed.nextSNPs(5)
+        bed.next_snps(5)
 
     def test_nextSNPs(self):
         for b in [1, 2, 3]:
             bed = ld.PlinkBEDFile("test/plink_test/plink.bed", self.N, self.bim)
-            x = bed.nextSNPs(b)
+            x = bed.next_snps(b)
             assert x.shape == (5, b)
             assert np.all(np.abs(np.mean(x, axis=0)) < 0.01)
             assert np.all(np.abs(np.std(x, axis=0) - 1) < 0.01)
@@ -109,7 +109,7 @@ class test_bed(unittest.TestCase):
     def test_nextSNPs_maf_ref(self):
         b = 4
         bed = ld.PlinkBEDFile("test/plink_test/plink.bed", self.N, self.bim)
-        x = bed.nextSNPs(b)
-        bed._currentSNP -= b
-        y = bed.nextSNPs(b, minorRef=True)
+        x = bed.next_snps(b)
+        bed._current_snp -= b
+        y = bed.next_snps(b)
         assert np.all(x == -y)

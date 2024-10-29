@@ -12,6 +12,8 @@ Tests:
 Note:
     Ensure that the test data files are located in the 'test/plink_test' directory.
 
+(c) 2015 Brendan Bulik-Sullivan and Hilary Finucane
+(c) 2024 Thomas Reimonn
 """
 
 from unittest import TestCase

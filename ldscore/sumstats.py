@@ -457,13 +457,12 @@ def estimate_rg(args, log):
             if args.print_delete_vals:
                 _print_rg_delete_values(rghat, out_prefix_loop, log)
 
-        except Exception:  # keep going if phenotype 50/100 causes an error
+        except Exception as e:
             msg = "ERROR computing rg for phenotype {I}/{N}, from file {F}."
             log.log(msg.format(I=i + 2, N=len(rg_paths), F=rg_paths[i + 1]))
-            ex_type, ex, tb = sys.exc_info()
-            log.log(ex)
-            if len(RG) <= i:  # if exception raised before appending to RG
-                RG.append(None)
+            log.log(f"Exception: {e}")
+            # Re-raise the exception to halt execution and see the traceback
+            raise
 
     log.log("\nSummary of Genetic Correlation Results\n" + _get_rg_table(rg_paths, RG, args))
     return RG
@@ -498,7 +497,7 @@ def _get_rg_table(rg_paths, RG, args):
         args.samp_prev is not None
         and args.pop_prev is not None
         and all((i is not None for i in args.samp_prev))
-        and all((i is not None for it in args.pop_prev))
+        and all((it is not None for it in args.pop_prev))
     ):
 
         c = list(

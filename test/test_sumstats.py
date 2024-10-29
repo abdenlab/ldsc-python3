@@ -472,7 +472,7 @@ class Test_Estimate(unittest.TestCase):
         args.rg = ",".join([DIR + "/simulate_test/sumstats/1" for _ in range(2)])
         args.out = DIR + "/simulate_test/1"
         x = s.estimate_rg(args, log)[0]
-        args.M = open(DIR + "/simulate_test/ldscore/oneld_onefile.l2.M_5_50", "rb").read().rstrip("\n")
+        args.M = open(DIR + "/simulate_test/ldscore/oneld_onefile.l2.M_5_50", "rt").read().rstrip("\n")
         y = s.estimate_rg(args, log)[0]
         assert_array_almost_equal(x.rg_ratio, y.rg_ratio)
         assert_array_almost_equal(x.rg_se, y.rg_se)

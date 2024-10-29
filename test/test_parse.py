@@ -6,7 +6,7 @@ import pandas as pd
 from nose.tools import *
 from numpy.testing import assert_array_equal
 
-from ldscore import parse as ps
+from ldsc import parse as ps
 
 DIR = os.path.dirname(__file__)
 
@@ -41,7 +41,7 @@ def test_read_sumstats():
     x = ps.sumstats(os.path.join(DIR, "parse_test/test.sumstats"), dropna=True, alleles=True)
     assert_equal(len(x), 1)
     assert_array_equal(x.SNP, "rs1")
-    assert_raises(ValueError, ps.sumstats, os.path.join(DIR, "parse_test/test.l2.ldscore.gz"))
+    assert_raises(ValueError, ps.sumstats, os.path.join(DIR, "parse_test/test.l2.ldsc.gz"))
 
 
 def test_frq_parser():

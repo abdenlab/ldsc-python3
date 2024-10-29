@@ -144,8 +144,8 @@ def frq_parser(fh, compression):
 
 
 def ldscore(fh, num=None):
-    """Parse .l2.ldscore files, split across num chromosomes. See docs/file_formats_ld.txt."""
-    suffix = ".l2.ldscore"
+    """Parse .l2.ldsc files, split across num chromosomes. See docs/file_formats_ld.txt."""
+    suffix = ".l2.ldsc"
     if num is not None:  # num files, e.g., one per chromosome
         chrs = get_present_chrs(fh, num + 1)
         first_fh = sub_chr(fh, chrs[0]) + suffix

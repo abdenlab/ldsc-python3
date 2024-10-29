@@ -6,7 +6,7 @@ import pandas as pd
 from numpy.testing import assert_allclose
 from pandas.testing import assert_frame_equal, assert_series_equal
 
-import munge_sumstats as munge
+from ldsc import munge_sumstats as munge
 
 
 class Mock(object):

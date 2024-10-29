@@ -9,7 +9,7 @@ from numpy.testing import (
     assert_array_equal,
 )
 
-import ldscore.jackknife as jk
+import ldsc.jackknife as jk
 
 
 class Test_Jackknife(unittest.TestCase):

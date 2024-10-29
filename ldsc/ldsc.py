@@ -21,10 +21,10 @@ from subprocess import call
 import numpy as np
 import pandas as pd
 
-import ldscore.ldscore as ld
-import ldscore.parse as ps
-import ldscore.regressions as reg
-import ldscore.sumstats as sumstats
+import ldsc.ldscore as ld
+import ldsc.parse as ps
+import ldsc.regressions as reg
+import ldsc.sumstats as sumstats
 
 try:
     x = pd.DataFrame({"A": [1, 2, 3]})
@@ -357,8 +357,8 @@ def ldscore(args, log):
     else:
         ldscore_colnames = [y + col_prefix + scale_suffix for y in annot_colnames]
 
-    # print .ldscore. Output columns: CHR, BP, RS, [LD Scores]
-    out_fname = args.out + "." + file_suffix + ".ldscore"
+    # print .ldsc. Output columns: CHR, BP, RS, [LD Scores]
+    out_fname = args.out + "." + file_suffix + ".ldsc"
     new_colnames = geno_array.colnames + ldscore_colnames
     df = pd.DataFrame.from_records(np.c_[geno_array.df, lN])
     df.columns = new_colnames
@@ -617,26 +617,26 @@ parser.add_argument(
     type=str,
     help="Use --ref-ld to tell LDSC which LD Scores to use as the predictors in the LD "
     "Score regression. "
-    "LDSC will automatically append .l2.ldscore/.l2.ldscore.gz to the filename prefix.",
+    "LDSC will automatically append .l2.ldsc/.l2.ldsc.gz to the filename prefix.",
 )
 parser.add_argument(
     "--ref-ld-chr",
     default=None,
     type=str,
-    help="Same as --ref-ld, but will automatically concatenate .l2.ldscore files split "
-    "across 22 chromosomes. LDSC will automatically append .l2.ldscore/.l2.ldscore.gz "
+    help="Same as --ref-ld, but will automatically concatenate .l2.ldsc files split "
+    "across 22 chromosomes. LDSC will automatically append .l2.ldsc/.l2.ldsc.gz "
     "to the filename prefix. If the filename prefix contains the symbol @, LDSC will "
     "replace the @ symbol with chromosome numbers. Otherwise, LDSC will append chromosome "
     "numbers to the end of the filename prefix."
-    "Example 1: --ref-ld-chr ld/ will read ld/1.l2.ldscore.gz ... ld/22.l2.ldscore.gz"
-    "Example 2: --ref-ld-chr ld/@_kg will read ld/1_kg.l2.ldscore.gz ... ld/22_kg.l2.ldscore.gz",
+    "Example 1: --ref-ld-chr ld/ will read ld/1.l2.ldsc.gz ... ld/22.l2.ldsc.gz"
+    "Example 2: --ref-ld-chr ld/@_kg will read ld/1_kg.l2.ldsc.gz ... ld/22_kg.l2.ldsc.gz",
 )
 parser.add_argument(
     "--w-ld",
     default=None,
     type=str,
     help="Filename prefix for file with LD Scores with sum r^2 taken over SNPs included "
-    "in the regression. LDSC will automatically append .l2.ldscore/.l2.ldscore.gz.",
+    "in the regression. LDSC will automatically append .l2.ldsc/.l2.ldsc.gz.",
 )
 parser.add_argument(
     "--w-ld-chr",
@@ -689,7 +689,7 @@ parser.add_argument(
     "--M",
     default=None,
     type=str,
-    help="# of SNPs (if you don't want to use the .l2.M files that came with your .l2.ldscore.gz files)",
+    help="# of SNPs (if you don't want to use the .l2.M files that came with your .l2.ldsc.gz files)",
 )
 parser.add_argument(
     "--two-step",
@@ -733,7 +733,7 @@ parser.add_argument(
     "--pickle",
     default=False,
     action="store_true",
-    help="Store .l2.ldscore files as pickles instead of gzipped tab-delimited text.",
+    help="Store .l2.ldsc files as pickles instead of gzipped tab-delimited text.",
 )
 parser.add_argument(
     "--yes-really",

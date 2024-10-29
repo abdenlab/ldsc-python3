@@ -25,8 +25,8 @@ from numpy.testing import (
 )
 from pandas.testing import assert_series_equal
 
-import ldscore.parse as ps
-import ldscore.sumstats as s
+import ldsc.parse as ps
+import ldsc.sumstats as s
 from ldsc import parser
 
 # Constants
@@ -272,8 +272,8 @@ class TestGeneticCorrelationStatistical(unittest.TestCase):
         Set up test cases by running genetic correlation estimation.
         """
         args = parser.parse_args("")
-        args.ref_ld = os.path.join(TEST_DIR, "simulate_test/ldscore/twold_onefile")
-        args.w_ld = os.path.join(TEST_DIR, "simulate_test/ldscore/w")
+        args.ref_ld = os.path.join(TEST_DIR, "simulate_test/ldsc/twold_onefile")
+        args.w_ld = os.path.join(TEST_DIR, "simulate_test/ldsc/w")
         args.rg = ",".join([os.path.join(TEST_DIR, f"simulate_test/sumstats/{i}") for i in range(NUM_REPETITIONS)])
         args.out = os.path.join(TEST_DIR, "simulate_test/1")
         cls.rg_results = s.estimate_genetic_correlation(args, logger)
@@ -329,8 +329,8 @@ class TestHeritabilityStatistical(unittest.TestCase):
         Set up test cases by running heritability estimation.
         """
         args = parser.parse_args("")
-        args.ref_ld = os.path.join(TEST_DIR, "simulate_test/ldscore/twold_onefile")
-        args.w_ld = os.path.join(TEST_DIR, "simulate_test/ldscore/w")
+        args.ref_ld = os.path.join(TEST_DIR, "simulate_test/ldsc/twold_onefile")
+        args.w_ld = os.path.join(TEST_DIR, "simulate_test/ldsc/w")
         args.chisq_max = 99999
         cls.h2_results = []
         cls.h2_results_no_intercept = []
@@ -389,14 +389,14 @@ class TestEstimateFunctions(unittest.TestCase):
         Test estimate_h2 function with provided M values.
         """
         args = parser.parse_args("")
-        args.ref_ld = os.path.join(TEST_DIR, "simulate_test/ldscore/oneld_onefile")
-        args.w_ld = os.path.join(TEST_DIR, "simulate_test/ldscore/w")
+        args.ref_ld = os.path.join(TEST_DIR, "simulate_test/ldsc/oneld_onefile")
+        args.w_ld = os.path.join(TEST_DIR, "simulate_test/ldsc/w")
         args.h2 = os.path.join(TEST_DIR, "simulate_test/sumstats/1")
         args.out = os.path.join(TEST_DIR, "simulate_test/1")
         args.print_cov = True
         args.print_delete_vals = True
         h2_result = s.estimate_heritability(args, logger)
-        with open(os.path.join(TEST_DIR, "simulate_test/ldscore/oneld_onefile.l2.M_5_50"), "r") as f:
+        with open(os.path.join(TEST_DIR, "simulate_test/ldsc/oneld_onefile.l2.M_5_50"), "r") as f:
             m_value = f.read().strip()
         args.M = m_value
         h2_result_with_M = s.estimate_heritability(args, logger)
@@ -408,12 +408,12 @@ class TestEstimateFunctions(unittest.TestCase):
         Test estimate_rg function with provided M values.
         """
         args = parser.parse_args("")
-        args.ref_ld = os.path.join(TEST_DIR, "simulate_test/ldscore/oneld_onefile")
-        args.w_ld = os.path.join(TEST_DIR, "simulate_test/ldscore/w")
+        args.ref_ld = os.path.join(TEST_DIR, "simulate_test/ldsc/oneld_onefile")
+        args.w_ld = os.path.join(TEST_DIR, "simulate_test/ldsc/w")
         args.rg = ",".join([os.path.join(TEST_DIR, "simulate_test/sumstats/1") for _ in range(2)])
         args.out = os.path.join(TEST_DIR, "simulate_test/1")
         rg_result = s.estimate_genetic_correlation(args, logger)[0]
-        with open(os.path.join(TEST_DIR, "simulate_test/ldscore/oneld_onefile.l2.M_5_50"), "r") as f:
+        with open(os.path.join(TEST_DIR, "simulate_test/ldsc/oneld_onefile.l2.M_5_50"), "r") as f:
             m_value = f.read().strip()
         args.M = m_value
         rg_result_with_M = s.estimate_genetic_correlation(args, logger)[0]
@@ -425,8 +425,8 @@ class TestEstimateFunctions(unittest.TestCase):
         Test estimate_rg function with the no_check_alleles option.
         """
         args = parser.parse_args("")
-        args.ref_ld = os.path.join(TEST_DIR, "simulate_test/ldscore/oneld_onefile")
-        args.w_ld = os.path.join(TEST_DIR, "simulate_test/ldscore/w")
+        args.ref_ld = os.path.join(TEST_DIR, "simulate_test/ldsc/oneld_onefile")
+        args.w_ld = os.path.join(TEST_DIR, "simulate_test/ldsc/w")
         args.rg = ",".join([os.path.join(TEST_DIR, "simulate_test/sumstats/1") for _ in range(2)])
         args.out = os.path.join(TEST_DIR, "simulate_test/1")
         rg_result = s.estimate_genetic_correlation(args, logger)[0]
@@ -440,8 +440,8 @@ class TestEstimateFunctions(unittest.TestCase):
         Test estimate_heritability with different two-step estimator cutoffs.
         """
         args = parser.parse_args("")
-        args.ref_ld = os.path.join(TEST_DIR, "simulate_test/ldscore/oneld_onefile")
-        args.w_ld = os.path.join(TEST_DIR, "simulate_test/ldscore/w")
+        args.ref_ld = os.path.join(TEST_DIR, "simulate_test/ldsc/oneld_onefile")
+        args.w_ld = os.path.join(TEST_DIR, "simulate_test/ldsc/w")
         args.h2 = os.path.join(TEST_DIR, "simulate_test/sumstats/1")
         args.out = os.path.join(TEST_DIR, "simulate_test/1")
         args.chisq_max = 9999999
@@ -456,8 +456,8 @@ class TestEstimateFunctions(unittest.TestCase):
         Test estimate_genetic_correlation with different two-step estimator cutoffs.
         """
         args = parser.parse_args("")
-        args.ref_ld_chr = os.path.join(TEST_DIR, "simulate_test/ldscore/oneld_onefile")
-        args.w_ld = os.path.join(TEST_DIR, "simulate_test/ldscore/w")
+        args.ref_ld_chr = os.path.join(TEST_DIR, "simulate_test/ldsc/oneld_onefile")
+        args.w_ld = os.path.join(TEST_DIR, "simulate_test/ldsc/w")
         args.rg = ",".join([os.path.join(TEST_DIR, "simulate_test/sumstats/1") for _ in range(2)])
         args.out = os.path.join(TEST_DIR, "simulate_test/rg")
         args.two_step = 999

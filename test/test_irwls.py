@@ -4,7 +4,7 @@ import numpy as np
 from nose.tools import assert_raises
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 
-from ldscore.irwls import IRWLS
+from ldsc.irwls import IRWLS
 
 
 class Test_IRWLS_2D(unittest.TestCase):

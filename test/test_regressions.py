@@ -5,7 +5,7 @@ import numpy as np
 from nose.tools import assert_equal, assert_raises
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 
-import ldscore.regressions as reg
+import ldsc.regressions as reg
 
 np.set_printoptions(precision=4)
 

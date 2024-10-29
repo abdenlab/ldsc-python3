@@ -10,8 +10,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import chi2
 
-from ldsc import MASTHEAD, Logger, sec_to_str
-from ldscore import sumstats
+from ldsc import MASTHEAD, Logger, sec_to_str, sumstats
 
 np.seterr(invalid="ignore")
 
@@ -241,7 +240,7 @@ def parse_dat(dat_gen, convert_colname, merge_alleles, log, args):
     log.log(msg.format(F=args.sumstats, N=int(args.chunksize)))
     drops = {"NA": 0, "P": 0, "INFO": 0, "FRQ": 0, "A": 0, "SNP": 0, "MERGE": 0}
     for block_num, dat in enumerate(dat_gen):
-        sys.stdout.write(".")
+        sys.stdout.write("..")
         tot_snps += len(dat)
         old = len(dat)
         dat = dat.dropna(axis=0, how="any", subset=[x for x in dat.columns if x != "INFO"]).reset_index(drop=True)

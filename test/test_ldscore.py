@@ -4,8 +4,8 @@ import bitarray as ba
 import nose
 import numpy as np
 
-import ldscore.ldscore as ld
-import ldscore.parse as ps
+import ldsc.ldscore as ld
+import ldsc.parse as ps
 
 
 def test_getBlockLefts():

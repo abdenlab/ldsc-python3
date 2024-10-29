@@ -1,17 +1,20 @@
 #!/usr/bin/env python
 
-import pandas as pd
-import numpy as np
+import argparse
+import bz2
+import gzip
 import os
 import sys
-import traceback
-import gzip
-import bz2
-import argparse
-from scipy.stats import chi2
-from ldscore import sumstats
-from ldsc import MASTHEAD, Logger, sec_to_str
 import time
+import traceback
+
+import numpy as np
+import pandas as pd
+from scipy.stats import chi2
+
+from ldsc import MASTHEAD, Logger, sec_to_str
+from ldscore import sumstats
+
 np.seterr(invalid='ignore')
 
 try:

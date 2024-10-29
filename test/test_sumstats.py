@@ -1,13 +1,16 @@
-import ldscore.sumstats as s
-import ldscore.parse as ps
+import os
 import unittest
+
 import numpy as np
 import pandas as pd
-from pandas.util.testing import assert_series_equal, assert_frame_equal
-from nose.tools import *
-from numpy.testing import assert_array_equal, assert_array_almost_equal, assert_allclose
 from nose.plugins.attrib import attr
-import os
+from nose.tools import *
+from numpy.testing import (assert_allclose, assert_array_almost_equal,
+                           assert_array_equal)
+from pandas.util.testing import assert_frame_equal, assert_series_equal
+
+import ldscore.parse as ps
+import ldscore.sumstats as s
 from ldsc import parser
 
 DIR = os.path.dirname(__file__)

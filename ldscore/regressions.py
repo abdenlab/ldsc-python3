@@ -8,13 +8,15 @@ Last column = intercept.
 
 """
 
+from collections import namedtuple
+
 import numpy as np
 import pandas as pd
-from scipy.stats import norm, chi2
+from scipy.stats import chi2, norm
+from scipy.stats import t as tdist
+
 from . import jackknife as jk
 from .irwls import IRWLS
-from scipy.stats import t as tdist
-from collections import namedtuple
 
 np.seterr(divide="raise", invalid="raise")
 

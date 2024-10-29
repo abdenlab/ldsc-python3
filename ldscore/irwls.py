@@ -6,6 +6,7 @@ Iterativey re-weighted least squares.
 """
 
 import numpy as np
+
 from . import jackknife as jk
 
 

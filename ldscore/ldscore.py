@@ -1,6 +1,6 @@
 
-import numpy as np
 import bitarray as ba
+import numpy as np
 
 
 def getBlockLefts(coords, max_dist):

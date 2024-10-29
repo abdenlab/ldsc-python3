@@ -1,8 +1,10 @@
-import ldscore.ldscore as ld
 import unittest
+
 import bitarray as ba
-import numpy as np
 import nose
+import numpy as np
+
+import ldscore.ldscore as ld
 import ldscore.parse as ps
 
 

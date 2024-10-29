@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 
-import pandas as pd
-import numpy as np
 import argparse
-from pybedtools import BedTool
 import gzip
+
+import numpy as np
+import pandas as pd
+from pybedtools import BedTool
 
 
 def gene_set_to_bed(args):

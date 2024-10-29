@@ -6,18 +6,19 @@ into memory and checking that the input makes sense. There is no math here. LD S
 regression is implemented in the regressions module.
 """
 
+import copy
+import glob
+import itertools as it
+import os
+import sys
+import traceback
+
 import numpy as np
 import pandas as pd
 from scipy import stats
-import itertools as it
+
 from . import parse as ps
 from . import regressions as reg
-import sys
-import traceback
-import copy
-import os
-import glob
-
 
 _N_CHR = 22
 # complementary bases

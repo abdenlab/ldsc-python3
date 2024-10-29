@@ -1,187 +1,234 @@
 """
+Iteratively Re-weighted Least Squares (IRWLS) module.
+
+This module provides the IRWLS class, which implements iteratively re-weighted
+least squares for regression analysis, including methods for jackknife variance
+estimation.
+
 (c) 2015 Brendan Bulik-Sullivan and Hilary Finucane
-
-Iterativey re-weighted least squares.
-
+(c) 2024 Thomas Reimonn
 """
+
+from typing import Callable, Optional, Union
 
 import numpy as np
 
 from . import jackknife as jk
 
 
-class IRWLS(object):
+class IRWLS:
     """
-    Iteratively re-weighted least squares (FLWS).
+    Iteratively Re-weighted Least Squares (IRWLS) estimator.
 
-    Parameters
-    ----------
-    x : np.matrix with shape (n, p)
-        Independent variable.
-    y : np.matrix with shape (n, 1)
-        Dependent variable.
-    update_func : function
-        Transforms output of np.linalg.lstsq to new weights.
-    n_blocks : int
-        Number of jackknife blocks (for estimating SE via block jackknife).
-    w : np.matrix with shape (n, 1)
-        Initial regression weights (default is the identity matrix). These should be on the
-        inverse CVF scale.
-    slow : bool
-        Use slow block jackknife? (Mostly for testing)
+    This class implements the IRWLS algorithm for estimating regression coefficients,
+    allowing for heteroscedasticity or other forms of non-constant variance in the
+    residuals. It also provides jackknife variance estimation using block jackknife.
 
-    Attributes
-    ----------
-    est : np.matrix with shape (1, p)
-        IRWLS estimate.
-    jknife_est : np.matrix with shape (1, p)
-        Jackknifed estimate.
-    jknife_var : np.matrix with shape (1, p)
-        Variance of jackknifed estimate.
-    jknife_se : np.matrix with shape (1, p)
-        Standard error of jackknifed estimate, equal to sqrt(jknife_var).
-    jknife_cov : np.matrix with shape (p, p)
-        Covariance matrix of jackknifed estimate.
-    delete_values : np.matrix with shape (n_blocks, p)
-        Jackknife delete values.
-
-    Methods
-    -------
-    wls(x, y, w) :
-        Weighted Least Squares.
-    _weight(x, w) :
-        Weight x by w.
+    Attributes:
+        est (np.ndarray): Estimated regression coefficients (shape: (n_features, 1)).
+        jknife_est (np.ndarray): Jackknife estimates of the regression coefficients
+            (shape: (n_features, 1)).
+        jknife_var (np.ndarray): Variance of the jackknife estimates (shape: (n_features, 1)).
+        jknife_se (np.ndarray): Standard errors of the jackknife estimates
+            (shape: (n_features, 1)).
+        jknife_cov (np.ndarray): Covariance matrix of the jackknife estimates
+            (shape: (n_features, n_features)).
+        delete_values (np.ndarray): Jackknife delete values (shape: (n_blocks, n_features)).
+        separators (Optional[np.ndarray]): Block boundaries for jackknife
+            (shape: (n_blocks + 1,)).
 
     """
 
-    def __init__(self, x, y, update_func, n_blocks, w=None, slow=False, separators=None):
-        n, p = jk._check_shape(x, y)
+    def __init__(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        update_func: Callable[[tuple], np.ndarray],
+        n_blocks: int,
+        w: Optional[np.ndarray] = None,
+        slow: bool = False,
+        separators: Optional[np.ndarray] = None,
+        max_iter: int = 2,
+    ) -> None:
+        """
+        Initialize the IRWLS estimator.
+
+        Args:
+            X (np.ndarray): Independent variables (shape: (n_samples, n_features)).
+            y (np.ndarray): Dependent variable (shape: (n_samples,) or (n_samples, 1)).
+            update_func (Callable[[tuple], np.ndarray]): Function to update weights.
+                Should take the output of np.linalg.lstsq and return new weights
+                (shape: (n_samples, 1)).
+            n_blocks (int): Number of jackknife blocks for variance estimation.
+            w (Optional[np.ndarray]): Initial regression weights (shape: (n_samples,) or
+                (n_samples, 1)). Defaults to ones if None.
+            slow (bool): Whether to use the slow block jackknife method (for testing).
+            separators (Optional[np.ndarray]): Optional block boundaries for jackknife.
+            max_iter (int): Maximum number of iterations for the IRWLS algorithm.
+
+        Raises:
+            ValueError: If input arrays have incompatible shapes.
+        """
+        n_samples, _ = X.shape
+        y = y.reshape(-1, 1)
         if w is None:
-            w = np.ones_like(y)
-        if w.shape != (n, 1):
-            raise ValueError("w has shape {S}. w must have shape ({N}, 1).".format(S=w.shape, N=n))
+            w = np.ones((n_samples, 1))
+        else:
+            w = w.reshape(-1, 1)
 
-        jknife = self.irwls(x, y, update_func, n_blocks, w, slow=slow, separators=separators)
+        if w.shape != (n_samples, 1):
+            raise ValueError(f"w has shape {w.shape}. Expected shape: ({n_samples}, 1).")
+
+        jknife = self.irwls(
+            X,
+            y,
+            update_func,
+            n_blocks,
+            w,
+            slow=slow,
+            separators=separators,
+            max_iter=max_iter,
+        )
         self.est = jknife.est
-        self.jknife_se = jknife.jknife_se
         self.jknife_est = jknife.jknife_est
         self.jknife_var = jknife.jknife_var
+        self.jknife_se = jknife.jknife_se
         self.jknife_cov = jknife.jknife_cov
         self.delete_values = jknife.delete_values
         self.separators = jknife.separators
 
     @classmethod
-    def irwls(cls, x, y, update_func, n_blocks, w, slow=False, separators=None):
+    def irwls(
+        cls,
+        X: np.ndarray,
+        y: np.ndarray,
+        update_func: Callable[[tuple], np.ndarray],
+        n_blocks: int,
+        w: np.ndarray,
+        slow: bool = False,
+        separators: Optional[np.ndarray] = None,
+        max_iter: int = 2,
+    ) -> Union[jk.LstsqJackknifeFast, jk.LstsqJackknifeSlow]:
         """
-        Iteratively re-weighted least squares (IRWLS).
+        Perform Iteratively Re-weighted Least Squares (IRWLS).
 
-        Parameters
-        ----------
-        x : np.matrix with shape (n, p)
-            Independent variable.
-        y : np.matrix with shape (n, 1)
-            Dependent variable.
-        update_func: function
-            Transforms output of np.linalg.lstsq to new weights.
-        n_blocks : int
-            Number of jackknife blocks (for estimating SE via block jackknife).
-        w : np.matrix with shape (n, 1)
-            Initial regression weights.
-        slow : bool
-            Use slow block jackknife? (Mostly for testing)
-        separators : list or None
-            Block jackknife block boundaries (optional).
+        Args:
+            X (np.ndarray): Independent variables (shape: (n_samples, n_features)).
+            y (np.ndarray): Dependent variable (shape: (n_samples, 1)).
+            update_func (Callable[[tuple], np.ndarray]): Function to update weights.
+            n_blocks (int): Number of jackknife blocks.
+            w (np.ndarray): Initial regression weights (shape: (n_samples, 1)).
+            slow (bool): Whether to use the slow block jackknife method.
+            separators (Optional[np.ndarray]): Optional block boundaries.
+            max_iter (int): Maximum number of iterations for the IRWLS algorithm.
 
-        Returns
-        -------
-        jknife : jk.LstsqJackknifeFast
-            Block jackknife regression with the final IRWLS weights.
+        Returns:
+            Union[jk.LstsqJackknifeFast, jk.LstsqJackknifeSlow]: Jackknife regression object
+            with final IRWLS weights.
 
+        Raises:
+            ValueError: If input arrays have incompatible shapes or weights are invalid.
         """
-        (n, p) = x.shape
-        if y.shape != (n, 1):
-            raise ValueError("y has shape {S}. y must have shape ({N}, 1).".format(S=y.shape, N=n))
-        if w.shape != (n, 1):
-            raise ValueError("w has shape {S}. w must have shape ({N}, 1).".format(S=w.shape, N=n))
+        n_samples, _ = X.shape
+        y = y.reshape(-1, 1)
+        w = w.reshape(-1, 1)
 
-        w = np.sqrt(w)
-        for i in range(2):  # update this later
-            new_w = np.sqrt(update_func(cls.wls(x, y, w)))
-            if new_w.shape != w.shape:
-                print("IRWLS update:", new_w.shape, w.shape)
-                raise ValueError("New weights must have same shape.")
-            else:
-                w = new_w
+        if y.shape != (n_samples, 1):
+            raise ValueError(f"y has shape {y.shape}. Expected shape: ({n_samples}, 1).")
+        if w.shape != (n_samples, 1):
+            raise ValueError(f"w has shape {w.shape}. Expected shape: ({n_samples}, 1).")
 
-        x = cls._weight(x, w)
-        y = cls._weight(y, w)
+        # Initialize weights
+        w_sqrt = np.sqrt(w)
+
+        # Iteratively update weights
+        for iteration in range(max_iter):
+            coef = cls.wls(X, y, w_sqrt)
+            new_w = np.sqrt(update_func(coef))
+            if new_w.shape != w_sqrt.shape:
+                raise ValueError(f"New weights have shape {new_w.shape}, expected {w_sqrt.shape}.")
+            w_sqrt = new_w
+
+        # Weight the data
+        X_weighted = cls._weight(X, w_sqrt)
+        y_weighted = cls._weight(y, w_sqrt)
+
+        # Perform jackknife estimation
         if slow:
-            jknife = jk.LstsqJackknifeSlow(x, y, n_blocks, separators=separators)
+            jknife = jk.LstsqJackknifeSlow(X_weighted, y_weighted, n_blocks, separators=separators)
         else:
-            jknife = jk.LstsqJackknifeFast(x, y, n_blocks, separators=separators)
+            jknife = jk.LstsqJackknifeFast(X_weighted, y_weighted, n_blocks, separators=separators)
 
         return jknife
 
     @classmethod
-    def wls(cls, x, y, w):
+    def wls(
+        cls,
+        X: np.ndarray,
+        y: np.ndarray,
+        w_sqrt: np.ndarray,
+    ) -> tuple:
         """
-        Weighted least squares.
+        Perform Weighted Least Squares regression.
 
-        Parameters
-        ----------
-        x : np.matrix with shape (n, p)
-            Independent variable.
-        y : np.matrix with shape (n, 1)
-            Dependent variable.
-        w : np.matrix with shape (n, 1)
-            Regression weights (1/CVF scale).
+        Args:
+            X (np.ndarray): Independent variables (shape: (n_samples, n_features)).
+            y (np.ndarray): Dependent variable (shape: (n_samples, 1)).
+            w_sqrt (np.ndarray): Square root of weights (shape: (n_samples, 1)).
 
-        Returns
-        -------
-        coef : list with four elements (coefficients, residuals, rank, singular values)
-            Output of np.linalg.lstsq
+        Returns:
+            tuple: Output of np.linalg.lstsq (coefficients, residuals, rank, singular values).
 
+        Raises:
+            ValueError: If input arrays have incompatible shapes.
         """
-        (n, p) = x.shape
-        if y.shape != (n, 1):
-            raise ValueError("y has shape {S}. y must have shape ({N}, 1).".format(S=y.shape, N=n))
-        if w.shape != (n, 1):
-            raise ValueError("w has shape {S}. w must have shape ({N}, 1).".format(S=w.shape, N=n))
+        n_samples, _ = X.shape
+        y = y.reshape(-1, 1)
+        w_sqrt = w_sqrt.reshape(-1, 1)
 
-        x = cls._weight(x, w)
-        y = cls._weight(y, w)
-        coef = np.linalg.lstsq(x, y)
+        if y.shape != (n_samples, 1):
+            raise ValueError(f"y has shape {y.shape}. Expected shape: ({n_samples}, 1).")
+        if w_sqrt.shape != (n_samples, 1):
+            raise ValueError(f"w_sqrt has shape {w_sqrt.shape}. Expected shape: ({n_samples}, 1).")
+
+        # Weight the data
+        X_weighted = cls._weight(X, w_sqrt)
+        y_weighted = cls._weight(y, w_sqrt)
+
+        # Perform least squares regression
+        coef = np.linalg.lstsq(X_weighted, y_weighted, rcond=None)
+
         return coef
 
-    @classmethod
-    def _weight(cls, x, w):
+    @staticmethod
+    def _weight(
+        X: np.ndarray,
+        w_sqrt: np.ndarray,
+    ) -> np.ndarray:
         """
-        Weight x by w.
+        Weight the data matrix X by w_sqrt.
 
-        Parameters
-        ----------
-        x : np.matrix with shape (n, p)
-            Rows are observations.
-        w : np.matrix with shape (n, 1)
-            Regression weights (1 / sqrt(CVF) scale).
+        Args:
+            X (np.ndarray): Data matrix (shape: (n_samples, n_features) or (n_samples, 1)).
+            w_sqrt (np.ndarray): Square root of weights (shape: (n_samples, 1)).
 
-        Returns
-        -------
-        x_new : np.matrix with shape (n, p)
-            x_new[i,j] = x[i,j] * w'[i], where w' is w normalized to have sum 1.
+        Returns:
+            np.ndarray: Weighted data matrix (shape: (n_samples, n_features) or (n_samples, 1)).
 
-        Raises
-        ------
-        ValueError :
-            If any element of w is <= 0 (negative weights are not meaningful in WLS).
-
+        Raises:
+            ValueError: If weights contain non-positive values or shapes are incompatible.
         """
-        if np.any(w <= 0):
-            raise ValueError("Weights must be > 0")
-        (n, p) = x.shape
-        if w.shape != (n, 1):
-            raise ValueError("w has shape {S}. w must have shape (n, 1).".format(S=w.shape))
+        if np.any(w_sqrt <= 0):
+            raise ValueError("Weights must be positive.")
 
-        w = w / float(np.sum(w))
-        x_new = np.multiply(x, w)
-        return x_new
+        n_samples = X.shape[0]
+        if w_sqrt.shape != (n_samples, 1):
+            raise ValueError(f"w_sqrt has shape {w_sqrt.shape}. Expected shape: ({n_samples}, 1).")
+
+        # Normalize weights to have sum 1
+        w_normalized = w_sqrt / np.sum(w_sqrt)
+
+        # Multiply each row of X by the corresponding weight
+        X_weighted = X * w_normalized
+
+        return X_weighted

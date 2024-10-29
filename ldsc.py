@@ -780,8 +780,8 @@ parser.add_argument(
     help="Population prevalence of binary phenotype (for conversion to liability scale).",
 )
 
-if __name__ == "__main__":
 
+def main():
     args = parser.parse_args()
     if args.out is None:
         raise ValueError("--out is required.")
@@ -861,3 +861,7 @@ if __name__ == "__main__":
         log.log("Analysis finished at {T}".format(T=time.ctime()))
         time_elapsed = round(time.time() - start_time, 2)
         log.log("Total time elapsed: {T}".format(T=sec_to_str(time_elapsed)))
+
+
+if __name__ == "__main__":
+    main()

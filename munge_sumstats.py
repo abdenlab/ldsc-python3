@@ -833,5 +833,9 @@ def munge_sumstats(args, p=True):
         log.log("Total time elapsed: {T}".format(T=sec_to_str(round(time.time() - START_TIME, 2))))
 
 
-if __name__ == "__main__":
+def main():
     munge_sumstats(parser.parse_args(), p=True)
+
+
+if __name__ == "__main__":
+    main()

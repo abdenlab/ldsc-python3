@@ -50,9 +50,7 @@ np.set_printoptions(precision=4)
 
 def sec_to_str(t):
     """Convert seconds to days:hours:minutes:seconds"""
-    [d, h, m, s, n] = reduce(
-        lambda ll, b: divmod(ll[0], b) + ll[1:], [(t, 1), 60, 60, 24]
-    )
+    [d, h, m, s, n] = reduce(lambda ll, b: divmod(ll[0], b) + ll[1:], [(t, 1), 60, 60, 24])
     f = ""
     if d > 0:
         f += "{D}d:".format(D=d)
@@ -150,29 +148,20 @@ def ldscore(args, log):
             if args.thin_annot:  # annot file has only annotations
                 annot = ps.ThinAnnotFile(args.annot)
                 n_annot, ma = len(annot.df.columns), len(annot.df)
-                log.log(
-                    "Read {A} annotations for {M} SNPs from {f}".format(
-                        f=args.annot, A=n_annot, M=ma
-                    )
-                )
+                log.log("Read {A} annotations for {M} SNPs from {f}".format(f=args.annot, A=n_annot, M=ma))
                 annot_matrix = annot.df.values
                 annot_colnames = annot.df.columns
                 keep_snps = None
             else:
                 annot = ps.AnnotFile(args.annot)
                 n_annot, ma = len(annot.df.columns) - 4, len(annot.df)
-                log.log(
-                    "Read {A} annotations for {M} SNPs from {f}".format(
-                        f=args.annot, A=n_annot, M=ma
-                    )
-                )
+                log.log("Read {A} annotations for {M} SNPs from {f}".format(f=args.annot, A=n_annot, M=ma))
                 annot_matrix = np.array(annot.df.iloc[:, 4:])
                 annot_colnames = annot.df.columns[4:]
                 keep_snps = None
                 if np.any(annot.df.SNP.values != array_snps.df.SNP.values):
                     raise ValueError(
-                        "The .annot file must contain the same SNPs in the same"
-                        + " order as the .bim file."
+                        "The .annot file must contain the same SNPs in the same" + " order as the .bim file."
                     )
         except Exception:
             log.log("Error parsing .annot file")
@@ -184,22 +173,14 @@ def ldscore(args, log):
 
     elif args.cts_bin is not None and args.cts_breaks is not None:  # --cts-bin
         cts_fnames = sumstats._splitp(args.cts_bin)  # read filenames
-        args.cts_breaks = args.cts_breaks.replace(
-            "N", "-"
-        )  # replace N with negative sign
+        args.cts_breaks = args.cts_breaks.replace("N", "-")  # replace N with negative sign
         try:  # split on x
-            breaks = [
-                [float(x) for x in y.split(",")] for y in args.cts_breaks.split("x")
-            ]
+            breaks = [[float(x) for x in y.split(",")] for y in args.cts_breaks.split("x")]
         except ValueError as e:
-            raise ValueError(
-                "--cts-breaks must be a comma-separated list of numbers: " + str(e.args)
-            )
+            raise ValueError("--cts-breaks must be a comma-separated list of numbers: " + str(e.args))
 
         if len(breaks) != len(cts_fnames):
-            raise ValueError(
-                "Need to specify one set of breaks for each file in --cts-bin."
-            )
+            raise ValueError("Need to specify one set of breaks for each file in --cts-bin.")
 
         if args.cts_names:
             cts_colnames = [str(x) for x in args.cts_names.split(",")]
@@ -210,9 +191,7 @@ def ldscore(args, log):
         else:
             cts_colnames = ["ANNOT" + str(i) for i in range(len(cts_fnames))]
 
-        log.log(
-            "Reading numbers with which to bin SNPs from {F}".format(F=args.cts_bin)
-        )
+        log.log("Reading numbers with which to bin SNPs from {F}".format(F=args.cts_bin))
 
         cts_levs = []
         full_labs = []
@@ -224,9 +203,7 @@ def ldscore(args, log):
             cut_breaks = list(breaks[i])
             name_breaks = list(cut_breaks)
             if np.all(cut_breaks >= max_cts) or np.all(cut_breaks <= min_cts):
-                raise ValueError(
-                    "All breaks lie outside the range of the cts variable."
-                )
+                raise ValueError("All breaks lie outside the range of the cts variable.")
 
             if np.all(cut_breaks <= max_cts):
                 name_breaks.append(max_cts)
@@ -243,9 +220,7 @@ def ldscore(args, log):
             name_breaks[0] = "min"
             name_breaks[-1] = "max"
             name_breaks = [str(x) for x in name_breaks]
-            labs = [
-                name_breaks[i] + "_" + name_breaks[i + 1] for i in range(n_breaks - 1)
-            ]
+            labs = [name_breaks[i] + "_" + name_breaks[i + 1] for i in range(n_breaks - 1)]
             cut_vec = pd.Series(pd.cut(vec, bins=cut_breaks, labels=labs))
             cts_levs.append(cut_vec)
             full_labs.append(labs)
@@ -274,8 +249,7 @@ def ldscore(args, log):
         if len(cts_colnames) > 1:
             # flatten multi-index
             annot_colnames = [
-                "_".join([cts_colnames[i] + "_" + b for i, b in enumerate(c)])
-                for c in annot_matrix.columns
+                "_".join([cts_colnames[i] + "_" + b for i, b in enumerate(c)]) for c in annot_matrix.columns
             ]
         else:
             annot_colnames = [cts_colnames[0] + "_" + b for b in annot_matrix.columns]
@@ -285,9 +259,7 @@ def ldscore(args, log):
         n_annot = len(annot_colnames)
         if np.any(np.sum(annot_matrix, axis=1) == 0):
             # This exception should never be raised. For debugging only.
-            raise ValueError(
-                "Some SNPs have no annotation in --cts-bin. This is a bug!"
-            )
+            raise ValueError("Some SNPs have no annotation in --cts-bin. This is a bug!")
 
     else:
         annot_matrix, annot_colnames, keep_snps = (
@@ -340,9 +312,7 @@ def ldscore(args, log):
 
     block_left = ld.getBlockLefts(coords, max_dist)
     if block_left[len(block_left) - 1] == 0 and not args.yes_really:
-        error_msg = (
-            "Do you really want to compute whole-chomosome LD Score? If so, set the "
-        )
+        error_msg = "Do you really want to compute whole-chomosome LD Score? If so, set the "
         error_msg += "--yes-really flag (warning: it will use a lot of time / memory)"
         raise ValueError(error_msg)
 
@@ -384,9 +354,7 @@ def ldscore(args, log):
         else:
             print_snps = pd.read_csv(args.print_snps, header=None)
         if len(print_snps.columns) > 1:
-            raise ValueError(
-                "--print-snps must refer to a file with a one column of SNP IDs."
-            )
+            raise ValueError("--print-snps must refer to a file with a one column of SNP IDs.")
         log.log(
             "Reading list of {N} SNPs for which to print LD Scores from {F}".format(
                 F=args.print_snps, N=len(print_snps)
@@ -403,16 +371,12 @@ def ldscore(args, log):
 
     l2_suffix = ".gz"
     log.log("Writing LD Scores for {N} SNPs to {f}.gz".format(f=out_fname, N=len(df)))
-    df.drop(["CM", "MAF"], axis=1).to_csv(
-        out_fname, sep="\t", header=True, index=False, float_format="%.3f"
-    )
+    df.drop(["CM", "MAF"], axis=1).to_csv(out_fname, sep="\t", header=True, index=False, float_format="%.3f")
     call(["gzip", "-f", out_fname])
     if annot_matrix is not None:
         M = np.atleast_1d(np.squeeze(np.asarray(np.sum(annot_matrix, axis=0))))
         ii = geno_array.maf > 0.05
-        M_5_50 = np.atleast_1d(
-            np.squeeze(np.asarray(np.sum(annot_matrix[ii, :], axis=0)))
-        )
+        M_5_50 = np.atleast_1d(np.squeeze(np.asarray(np.sum(annot_matrix[ii, :], axis=0))))
     else:
         M = [geno_array.m]
         M_5_50 = [np.sum(geno_array.maf > 0.05)]
@@ -434,11 +398,7 @@ def ldscore(args, log):
         annot_df = pd.DataFrame(np.c_[geno_array.df, annot_matrix])
         annot_df.columns = new_colnames
         del annot_df["MAF"]
-        log.log(
-            "Writing annot matrix produced by --cts-bin to {F}".format(
-                F=out_fname + ".gz"
-            )
-        )
+        log.log("Writing annot matrix produced by --cts-bin to {F}".format(F=out_fname + ".gz"))
         annot_df.to_csv(out_fname_annot, sep="\t", header=True, index=False)
         call(["gzip", "-f", out_fname_annot])
 
@@ -455,9 +415,7 @@ def ldscore(args, log):
     log.log(df.ix[:, 4:].corr())
 
     # print condition number
-    if (
-        n_annot > 1
-    ):  # condition number of a column vector w/ nonzero var is trivially one
+    if n_annot > 1:  # condition number of a column vector w/ nonzero var is trivially one
         log.log("\nLD Score Matrix Condition Number")
         cond_num = np.linalg.cond(df.ix[:, 5:])
         log.log(reg.remove_brackets(str(np.matrix(cond_num))))
@@ -488,13 +446,10 @@ parser.add_argument(
     "--out",
     default="ldsc",
     type=str,
-    help="Output filename prefix. If --out is not set, LDSC will use ldsc as the "
-    "defualt output filename prefix.",
+    help="Output filename prefix. If --out is not set, LDSC will use ldsc as the " "defualt output filename prefix.",
 )
 # Basic LD Score Estimation Flags'
-parser.add_argument(
-    "--bfile", default=None, type=str, help="Prefix for Plink .bed/.bim/.fam file"
-)
+parser.add_argument("--bfile", default=None, type=str, help="Prefix for Plink .bed/.bim/.fam file")
 parser.add_argument(
     "--l2",
     default=False,
@@ -506,8 +461,7 @@ parser.add_argument(
     "--extract",
     default=None,
     type=str,
-    help="File with SNPs to include in LD Score estimation. "
-    "The file should contain one SNP ID per row.",
+    help="File with SNPs to include in LD Score estimation. " "The file should contain one SNP ID per row.",
 )
 parser.add_argument(
     "--keep",
@@ -672,8 +626,7 @@ parser.add_argument(
     "--w-ld-chr",
     default=None,
     type=str,
-    help="Same as --w-ld, but will read files split into 22 chromosomes in the same "
-    "manner as --ref-ld-chr.",
+    help="Same as --w-ld, but will read files split into 22 chromosomes in the same " "manner as --ref-ld-chr.",
 )
 parser.add_argument(
     "--overlap-annot",
@@ -695,9 +648,7 @@ parser.add_argument(
     help="For use with --overlap-annot. Provides allele frequencies to prune to common "
     "snps if --not-M-5-50 is not set.",
 )
-parser.add_argument(
-    "--frqfile-chr", type=str, help="Prefix for --frqfile files split over chromosome."
-)
+parser.add_argument("--frqfile-chr", type=str, help="Prefix for --frqfile files split over chromosome.")
 parser.add_argument(
     "--no-intercept",
     action="store_true",
@@ -744,8 +695,7 @@ parser.add_argument(
     "--print-cov",
     default=False,
     action="store_true",
-    help="For use with --h2/--rg. This flag tells LDSC to print the "
-    "covaraince matrix of the estimates.",
+    help="For use with --h2/--rg. This flag tells LDSC to print the " "covaraince matrix of the estimates.",
 )
 parser.add_argument(
     "--print-delete-vals",
@@ -781,9 +731,7 @@ parser.add_argument(
     action="store_true",
     help="Force LDSC to attempt to invert ill-conditioned matrices.",
 )
-parser.add_argument(
-    "--n-blocks", default=200, type=int, help="Number of block jackknife blocks."
-)
+parser.add_argument("--n-blocks", default=200, type=int, help="Number of block jackknife blocks.")
 parser.add_argument(
     "--not-M-5-50",
     default=False,
@@ -830,10 +778,7 @@ if __name__ == "__main__":
         header = MASTHEAD
         header += "Call: \n"
         header += "./ldsc.py \\\n"
-        options = [
-            "--" + x.replace("_", "-") + " " + str(opts[x]) + " \\"
-            for x in non_defaults
-        ]
+        options = ["--" + x.replace("_", "-") + " " + str(opts[x]) + " \\" for x in non_defaults]
         header += "\n".join(options).replace("True", "").replace("False", "")
         header = header[0:-1] + "\n"
         log.log(header)
@@ -851,9 +796,7 @@ if __name__ == "__main__":
             if args.annot is not None and args.cts_bin is not None:
                 raise ValueError("--annot and --cts-bin are currently incompatible.")
             if (args.cts_bin is not None) != (args.cts_breaks is not None):
-                raise ValueError(
-                    "Must set both or neither of --cts-bin and --cts-breaks."
-                )
+                raise ValueError("Must set both or neither of --cts-bin and --cts-breaks.")
             if args.per_allele and args.pq_exp is not None:
                 raise ValueError(
                     "Cannot set both --per-allele and --pq-exp (--per-allele is equivalent to --pq-exp 1)."
@@ -863,11 +806,7 @@ if __name__ == "__main__":
 
             ldscore(args, log)
         # summary statistics
-        elif (
-            (args.h2 or args.rg or args.h2_cts)
-            and (args.ref_ld or args.ref_ld_chr)
-            and (args.w_ld or args.w_ld_chr)
-        ):
+        elif (args.h2 or args.rg or args.h2_cts) and (args.ref_ld or args.ref_ld_chr) and (args.w_ld or args.w_ld_chr):
             if args.h2 is not None and args.rg is not None:
                 raise ValueError("Cannot set both --h2 and --rg.")
             if args.ref_ld and args.ref_ld_chr:
@@ -875,9 +814,7 @@ if __name__ == "__main__":
             if args.w_ld and args.w_ld_chr:
                 raise ValueError("Cannot set both --w-ld and --w-ld-chr.")
             if (args.samp_prev is not None) != (args.pop_prev is not None):
-                raise ValueError(
-                    "Must set both or neither of --samp-prev and --pop-prev."
-                )
+                raise ValueError("Must set both or neither of --samp-prev and --pop-prev.")
 
             if not args.overlap_annot or args.not_M_5_50:
                 if args.frqfile is not None or args.frqfile_chr is not None:
@@ -885,13 +822,8 @@ if __name__ == "__main__":
                     args.frqfile = None
                     args.frqfile_chr = None
             if args.overlap_annot and not args.not_M_5_50:
-                if not (
-                    (args.frqfile and args.ref_ld)
-                    or (args.frqfile_chr and args.ref_ld_chr)
-                ):
-                    raise ValueError(
-                        "Must set either --frqfile and --ref-ld or --frqfile-chr and --ref-ld-chr"
-                    )
+                if not ((args.frqfile and args.ref_ld) or (args.frqfile_chr and args.ref_ld_chr)):
+                    raise ValueError("Must set either --frqfile and --ref-ld or --frqfile-chr and --ref-ld-chr")
 
             if args.rg:
                 sumstats.estimate_rg(args, log)

@@ -64,9 +64,7 @@ print_ld(ldsc, "simulate_test/ldscore/twold_onefile", M_two)
 # Weight LD Scores
 w_ld = ld.copy()
 w_ld["LD"] = np.ones(N_SNP)
-w_ld.to_csv(
-    "simulate_test/ldscore/w.l2.ldscore", index=False, sep="\t", float_format="%.3f"
-)
+w_ld.to_csv("simulate_test/ldscore/w.l2.ldscore", index=False, sep="\t", float_format="%.3f")
 # split across chromosomes
 df = pd.DataFrame(
     {
@@ -78,18 +76,9 @@ df = pd.DataFrame(
 )
 for i in range(N_SIMS):
     z = np.random.normal(size=N_SNP).reshape((N_SNP,))
-    c = np.sqrt(
-        1
-        + N_INDIV
-        * (
-            h21 * two_ldsc[:, 0] / float(M_two[0])
-            + h22 * two_ldsc[:, 1] / float(M_two[1])
-        )
-    )
+    c = np.sqrt(1 + N_INDIV * (h21 * two_ldsc[:, 0] / float(M_two[0]) + h22 * two_ldsc[:, 1] / float(M_two[1])))
     z = np.multiply(z, c)
     dfi = df.copy()
     dfi["Z"] = z
     dfi.reindex(np.random.permutation(dfi.index))
-    dfi.to_csv(
-        "simulate_test/sumstats/" + str(i), sep="\t", index=False, float_format="%.3f"
-    )
+    dfi.to_csv("simulate_test/sumstats/" + str(i), sep="\t", index=False, float_format="%.3f")

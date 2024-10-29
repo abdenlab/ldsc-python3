@@ -37,9 +37,7 @@ class Test_Jackknife(unittest.TestCase):
         (est, var, se, cov) = jk.Jackknife.jknife(pseudovalues)
         assert_array_almost_equal(var, np.array([[0.91666667, 0.91666667]]))
         assert_array_almost_equal(est, np.array([[4.5, 4.5]]))
-        assert_array_almost_equal(
-            cov, np.matrix([[0.91666667, 0.91666667], [0.91666667, 0.91666667]])
-        )
+        assert_array_almost_equal(cov, np.matrix([[0.91666667, 0.91666667], [0.91666667, 0.91666667]]))
         assert_array_almost_equal(se**2, var)
         assert_array_equal(cov.shape, (2, 2))
         assert_array_equal(var.shape, (1, 2))
@@ -54,9 +52,7 @@ class Test_Jackknife(unittest.TestCase):
             assert_array_equal(x, np.ones_like(delete_values))
 
         est = est.T
-        nose.tools.assert_raises(
-            ValueError, jk.Jackknife.delete_values_to_pseudovalues, delete_values, est
-        )
+        nose.tools.assert_raises(ValueError, jk.Jackknife.delete_values_to_pseudovalues, delete_values, est)
 
 
 class Test_LstsqJackknifeSlow(unittest.TestCase):
@@ -159,15 +155,9 @@ class Test_LsqtsqJackknifeFast(unittest.TestCase):
             assert_array_almost_equal(est, [[1, 1]])
 
         # test the dimension checking
-        assert_raises(
-            ValueError, jk.LstsqJackknifeFast.block_values_to_est, xty[0:2], xtx
-        )
-        assert_raises(
-            ValueError, jk.LstsqJackknifeFast.block_values_to_est, xty, xtx[:, :, 0:1]
-        )
-        assert_raises(
-            ValueError, jk.LstsqJackknifeFast.block_values_to_est, xty, xtx[:, :, 0]
-        )
+        assert_raises(ValueError, jk.LstsqJackknifeFast.block_values_to_est, xty[0:2], xtx)
+        assert_raises(ValueError, jk.LstsqJackknifeFast.block_values_to_est, xty, xtx[:, :, 0:1])
+        assert_raises(ValueError, jk.LstsqJackknifeFast.block_values_to_est, xty, xtx[:, :, 0])
 
     def test_block_to_delete_1d(self):
         x = np.arange(6).reshape((6, 1))
@@ -200,9 +190,7 @@ class Test_LsqtsqJackknifeFast(unittest.TestCase):
         x = np.arange(6).reshape((1, 6))
         assert_raises(ValueError, jk.LstsqJackknifeFast, x, x, n_blocks=3)
         assert_raises(ValueError, jk.LstsqJackknifeFast, x.T, x.T, n_blocks=8)
-        assert_raises(
-            ValueError, jk.LstsqJackknifeFast, x.T, x.T, separators=list(range(10))
-        )
+        assert_raises(ValueError, jk.LstsqJackknifeFast, x.T, x.T, separators=list(range(10)))
 
 
 class Test_RatioJackknife(unittest.TestCase):
@@ -213,9 +201,7 @@ class Test_RatioJackknife(unittest.TestCase):
         self.denom_delete_values[9, 0] += 1
         self.est = np.matrix(-1)
         self.n_blocks = self.numer_delete_values.shape[0]
-        self.jknife = jk.RatioJackknife(
-            self.est, self.numer_delete_values, self.denom_delete_values
-        )
+        self.jknife = jk.RatioJackknife(self.est, self.numer_delete_values, self.denom_delete_values)
         self.assertEqual(self.jknife.est, self.est)
         assert_array_almost_equal(self.jknife.pseudovalues[0:9, :], -1)
         self.assertEqual(self.jknife.pseudovalues[9, :], 0)
@@ -240,17 +226,13 @@ class Test_RatioJackknife(unittest.TestCase):
         )
 
     def test_2d(self):
-        self.numer_delete_values = np.matrix(
-            np.vstack((np.arange(1, 11), 2 * np.arange(1, 11)))
-        ).T
+        self.numer_delete_values = np.matrix(np.vstack((np.arange(1, 11), 2 * np.arange(1, 11)))).T
         x = -np.arange(1, 11)
         x[9] += 1
         self.denom_delete_values = np.vstack((x, 4 * x)).T
         self.est = np.matrix((-1, -0.5))
         self.n_blocks = self.numer_delete_values.shape[0]
-        self.jknife = jk.RatioJackknife(
-            self.est, self.numer_delete_values, self.denom_delete_values
-        )
+        self.jknife = jk.RatioJackknife(self.est, self.numer_delete_values, self.denom_delete_values)
         assert_array_almost_equal(self.jknife.est, self.est)
         self.assertEqual(self.jknife.est.shape, (1, 2))
         assert_array_almost_equal(self.jknife.pseudovalues[0:9, 0], -1)
@@ -260,9 +242,7 @@ class Test_RatioJackknife(unittest.TestCase):
         assert_array_almost_equal(self.jknife.jknife_est, [[-0.9, -0.45]])
         assert_array_almost_equal(self.jknife.jknife_se, [[0.1, 0.05]])
         assert_array_almost_equal(self.jknife.jknife_var, [[0.01, 0.0025]])
-        assert_array_almost_equal(
-            self.jknife.jknife_cov, np.matrix(((0.01, 0.005), (0.005, 0.0025)))
-        )
+        assert_array_almost_equal(self.jknife.jknife_cov, np.matrix(((0.01, 0.005), (0.005, 0.0025))))
 
     def test_divide_by_zero_2d(self):
         est = np.ones((1, 2))

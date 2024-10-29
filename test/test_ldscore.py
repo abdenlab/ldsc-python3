@@ -54,9 +54,7 @@ class test_bed(unittest.TestCase):
 
     def test_filter_snps(self):
         keep_snps = [1, 4]
-        bed = ld.PlinkBEDFile(
-            "test/plink_test/plink.bed", self.N, self.bim, keep_snps=keep_snps
-        )
+        bed = ld.PlinkBEDFile("test/plink_test/plink.bed", self.N, self.bim, keep_snps=keep_snps)
         assert bed.m == 1
         assert bed.n == 5
         # pad bits are initialized with random memory --> can't test them
@@ -64,9 +62,7 @@ class test_bed(unittest.TestCase):
 
     def test_filter_indivs(self):
         keep_indivs = [0, 1]
-        bed = ld.PlinkBEDFile(
-            "test/plink_test/plink.bed", self.N, self.bim, keep_indivs=keep_indivs
-        )
+        bed = ld.PlinkBEDFile("test/plink_test/plink.bed", self.N, self.bim, keep_indivs=keep_indivs)
         assert bed.m == 2
         assert bed.n == 2
         # pad bits are initialized with random memory --> can't test them

@@ -29,9 +29,7 @@ def test_get_compression():
 
 def test_read_cts():
     match_snps = pd.Series(["rs1", "rs2", "rs3"])
-    assert_array_equal(
-        ps.read_cts(os.path.join(DIR, "parse_test/test.cts"), match_snps), [1, 2, 3]
-    )
+    assert_array_equal(ps.read_cts(os.path.join(DIR, "parse_test/test.cts"), match_snps), [1, 2, 3])
     assert_raises(
         ValueError,
         ps.read_cts,
@@ -41,14 +39,10 @@ def test_read_cts():
 
 
 def test_read_sumstats():
-    x = ps.sumstats(
-        os.path.join(DIR, "parse_test/test.sumstats"), dropna=True, alleles=True
-    )
+    x = ps.sumstats(os.path.join(DIR, "parse_test/test.sumstats"), dropna=True, alleles=True)
     assert_equal(len(x), 1)
     assert_array_equal(x.SNP, "rs1")
-    assert_raises(
-        ValueError, ps.sumstats, os.path.join(DIR, "parse_test/test.l2.ldscore.gz")
-    )
+    assert_raises(ValueError, ps.sumstats, os.path.join(DIR, "parse_test/test.l2.ldscore.gz"))
 
 
 def test_frq_parser():
@@ -83,9 +77,7 @@ class Test_ldscore(unittest.TestCase):
         y = ps.ldscore(os.path.join(DIR, "parse_test/test"))
         assert_array_equal(x.ix[:, 0:3], y)
         assert_array_equal(x.ix[:, [0, 3, 4]], y)
-        assert_raises(
-            ValueError, ps.ldscore_fromlist, [fh, os.path.join(DIR, "parse_test/test2")]
-        )
+        assert_raises(ValueError, ps.ldscore_fromlist, [fh, os.path.join(DIR, "parse_test/test2")])
 
 
 class Test_M(unittest.TestCase):
@@ -119,9 +111,7 @@ class Test_Fam(unittest.TestCase):
         assert_array_equal(fam.IDList.values.reshape((5,)), correct)
 
     def test_bad_filename(self):
-        assert_raises(
-            ValueError, ps.PlinkFAMFile, os.path.join(DIR, "plink_test/plink.bim")
-        )
+        assert_raises(ValueError, ps.PlinkFAMFile, os.path.join(DIR, "plink_test/plink.bim"))
 
 
 class Test_Bim(unittest.TestCase):
@@ -129,12 +119,8 @@ class Test_Bim(unittest.TestCase):
     def test_bim(self):
         bim = ps.PlinkBIMFile(os.path.join(DIR, "plink_test/plink.bim"))
         assert_equal(bim.n, 8)
-        correct = np.array(
-            ["rs_0", "rs_1", "rs_2", "rs_3", "rs_4", "rs_5", "rs_6", "rs_7"]
-        )
+        correct = np.array(["rs_0", "rs_1", "rs_2", "rs_3", "rs_4", "rs_5", "rs_6", "rs_7"])
         assert_array_equal(bim.IDList.values.reshape(8), correct)
 
     def test_bad_filename(self):
-        assert_raises(
-            ValueError, ps.PlinkBIMFile, os.path.join(DIR, "plink_test/plink.fam")
-        )
+        assert_raises(ValueError, ps.PlinkBIMFile, os.path.join(DIR, "plink_test/plink.fam"))

@@ -163,9 +163,7 @@ class LD_Score_Regression(object):
 
         n_snp, self.n_annot = x.shape
         if any(i.shape != (n_snp, 1) for i in [y, w, N]):
-            raise ValueError(
-                "N, weights and response (z1z2 or chisq) must have shape (n_snp, 1)."
-            )
+            raise ValueError("N, weights and response (z1z2 or chisq) must have shape (n_snp, 1).")
         if M.shape != (1, self.n_annot):
             raise ValueError("M must have shape (1, n_annot).")
 
@@ -194,52 +192,32 @@ class LD_Score_Regression(object):
             n1 = np.sum(step1_ii)
             self.twostep_filtered = n_snp - n1
             x1 = x[np.squeeze(step1_ii), :]
-            yp1, w1, N1, initial_w1 = [
-                a[step1_ii].reshape((n1, 1)) for a in (yp, w, N, initial_w)
-            ]
-            update_func1 = lambda a: self._update_func(
-                a, x1, w1, N1, M_tot, Nbar, ii=step1_ii
-            )
-            step1_jknife = IRWLS(
-                x1, yp1, update_func1, n_blocks, slow=slow, w=initial_w1
-            )
+            yp1, w1, N1, initial_w1 = [a[step1_ii].reshape((n1, 1)) for a in (yp, w, N, initial_w)]
+            update_func1 = lambda a: self._update_func(a, x1, w1, N1, M_tot, Nbar, ii=step1_ii)
+            step1_jknife = IRWLS(x1, yp1, update_func1, n_blocks, slow=slow, w=initial_w1)
             step1_int, _ = self._intercept(step1_jknife)
             yp = yp - step1_int
             x = remove_intercept(x)
             x_tot = remove_intercept(x_tot)
-            update_func2 = lambda a: self._update_func(
-                a, x_tot, w, N, M_tot, Nbar, step1_int
-            )
+            update_func2 = lambda a: self._update_func(a, x_tot, w, N, M_tot, Nbar, step1_int)
             s = update_separators(step1_jknife.separators, step1_ii)
-            step2_jknife = IRWLS(
-                x, yp, update_func2, n_blocks, slow=slow, w=initial_w, separators=s
-            )
-            c = np.sum(np.multiply(initial_w, x)) / np.sum(
-                np.multiply(initial_w, np.square(x))
-            )
-            jknife = self._combine_twostep_jknives(
-                step1_jknife, step2_jknife, M_tot, c, Nbar
-            )
+            step2_jknife = IRWLS(x, yp, update_func2, n_blocks, slow=slow, w=initial_w, separators=s)
+            c = np.sum(np.multiply(initial_w, x)) / np.sum(np.multiply(initial_w, np.square(x)))
+            jknife = self._combine_twostep_jknives(step1_jknife, step2_jknife, M_tot, c, Nbar)
         elif old_weights:
             initial_w = np.sqrt(initial_w)
             x = IRWLS._weight(x, initial_w)
             y = IRWLS._weight(yp, initial_w)
             jknife = jk.LstsqJackknifeFast(x, y, n_blocks)
         else:
-            update_func = lambda a: self._update_func(
-                a, x_tot, w, N, M_tot, Nbar, intercept
-            )
+            update_func = lambda a: self._update_func(a, x_tot, w, N, M_tot, Nbar, intercept)
             jknife = IRWLS(x, yp, update_func, n_blocks, slow=slow, w=initial_w)
 
         self.coef, self.coef_cov, self.coef_se = self._coef(jknife, Nbar)
-        self.cat, self.cat_cov, self.cat_se = self._cat(
-            jknife, M, Nbar, self.coef, self.coef_cov
-        )
+        self.cat, self.cat_cov, self.cat_se = self._cat(jknife, M, Nbar, self.coef, self.coef_cov)
 
         self.tot, self.tot_cov, self.tot_se = self._tot(self.cat, self.cat_cov)
-        self.prop, self.prop_cov, self.prop_se = self._prop(
-            jknife, M, Nbar, self.cat, self.tot
-        )
+        self.prop, self.prop_cov, self.prop_se = self._prop(jknife, M, Nbar, self.cat, self.tot)
 
         self.enrichment, self.M_prop = self._enrichment(M, M_tot, self.cat, self.tot)
         if not self.constrain_intercept:
@@ -268,9 +246,7 @@ class LD_Score_Regression(object):
     def _delete_vals_tot(self, jknife, Nbar, M):
         """Get delete values for total h2 or gencov."""
         n_annot = self.n_annot
-        tot_delete_vals = jknife.delete_values[
-            :, 0:n_annot
-        ]  # shape (n_blocks, n_annot)
+        tot_delete_vals = jknife.delete_values[:, 0:n_annot]  # shape (n_blocks, n_annot)
         # shape (n_blocks, 1)
         tot_delete_vals = np.dot(tot_delete_vals, M.T) / Nbar
         return tot_delete_vals
@@ -306,9 +282,7 @@ class LD_Score_Regression(object):
         """Convert total h2 and per-category h2 to per-category proportion h2 or gencov."""
         n_annot = self.n_annot
         n_blocks = jknife.delete_values.shape[0]
-        numer_delete_vals = (
-            np.multiply(M, jknife.delete_values[:, 0:n_annot]) / Nbar
-        )  # (n_blocks, n_annot)
+        numer_delete_vals = np.multiply(M, jknife.delete_values[:, 0:n_annot]) / Nbar  # (n_blocks, n_annot)
         denom_delete_vals = np.sum(numer_delete_vals, axis=1).reshape((n_blocks, 1))
         denom_delete_vals = np.dot(denom_delete_vals, np.ones((1, n_annot)))
         prop = jk.RatioJackknife(cat / tot, numer_delete_vals, denom_delete_vals)
@@ -344,9 +318,7 @@ class LD_Score_Regression(object):
             (n_blocks, n_annot)
         )  # check this
         pseudovalues = jk.Jackknife.delete_values_to_pseudovalues(delete_values, est)
-        jknife_est, jknife_var, jknife_se, jknife_cov = jk.Jackknife.jknife(
-            pseudovalues
-        )
+        jknife_est, jknife_var, jknife_se, jknife_cov = jk.Jackknife.jknife(pseudovalues)
         jknife = namedtuple(
             "jknife",
             [
@@ -397,9 +369,7 @@ class Hsq(LD_Score_Regression):
         )
         self.mean_chisq, self.lambda_gc = self._summarize_chisq(y)
         if not self.constrain_intercept:
-            self.ratio, self.ratio_se = self._ratio(
-                self.intercept, self.intercept_se, self.mean_chisq
-            )
+            self.ratio, self.ratio_se = self._ratio(self.intercept, self.intercept_se, self.mean_chisq)
 
     def _update_func(self, x, ref_ld_tot, w_ld, N, M, Nbar, intercept=None, ii=None):
         """
@@ -418,9 +388,7 @@ class Hsq(LD_Score_Regression):
             intercept = max(x[0][1])  # divide by zero error if intercept < 0
         else:
             if ref_ld_tot.shape[1] > 1:
-                raise ValueError(
-                    "Design matrix has intercept column for constrained intercept regression!"
-                )
+                raise ValueError("Design matrix has intercept column for constrained intercept regression!")
 
         ld = ref_ld_tot[:, 0].reshape(w_ld.shape)  # remove intercept
         w = self.weights(ld, w_ld, N, M, hsq, intercept, ii)
@@ -444,23 +412,15 @@ class Hsq(LD_Score_Regression):
 
         return ratio, ratio_se
 
-    def _overlap_output(
-        self, category_names, overlap_matrix, M_annot, M_tot, print_coefficients
-    ):
+    def _overlap_output(self, category_names, overlap_matrix, M_annot, M_tot, print_coefficients):
         """LD Score regression summary for overlapping categories."""
         overlap_matrix_prop = np.zeros([self.n_annot, self.n_annot])
         for i in range(self.n_annot):
             overlap_matrix_prop[i, :] = overlap_matrix[i, :] / M_annot
 
-        prop_hsq_overlap = np.dot(overlap_matrix_prop, self.prop.T).reshape(
-            (1, self.n_annot)
-        )
-        prop_hsq_overlap_var = np.diag(
-            np.dot(np.dot(overlap_matrix_prop, self.prop_cov), overlap_matrix_prop.T)
-        )
-        prop_hsq_overlap_se = np.sqrt(np.maximum(0, prop_hsq_overlap_var)).reshape(
-            (1, self.n_annot)
-        )
+        prop_hsq_overlap = np.dot(overlap_matrix_prop, self.prop.T).reshape((1, self.n_annot))
+        prop_hsq_overlap_var = np.diag(np.dot(np.dot(overlap_matrix_prop, self.prop_cov), overlap_matrix_prop.T))
+        prop_hsq_overlap_se = np.sqrt(np.maximum(0, prop_hsq_overlap_var)).reshape((1, self.n_annot))
         one_d_convert = lambda x: np.array(x).reshape(np.prod(x.shape))
         prop_M_overlap = M_annot / M_tot
         enrichment = prop_hsq_overlap / prop_M_overlap
@@ -468,21 +428,15 @@ class Hsq(LD_Score_Regression):
         overlap_matrix_diff = np.zeros([self.n_annot, self.n_annot])
         for i in range(self.n_annot):
             if not M_tot == M_annot[0, i]:
-                overlap_matrix_diff[i, :] = overlap_matrix[i, :] / M_annot[0, i] - (
-                    M_annot - overlap_matrix[i, :]
-                ) / (M_tot - M_annot[0, i])
+                overlap_matrix_diff[i, :] = overlap_matrix[i, :] / M_annot[0, i] - (M_annot - overlap_matrix[i, :]) / (
+                    M_tot - M_annot[0, i]
+                )
 
         diff_est = np.dot(overlap_matrix_diff, self.coef)
-        diff_cov = np.dot(
-            np.dot(overlap_matrix_diff, self.coef_cov), overlap_matrix_diff.T
-        )
+        diff_cov = np.dot(np.dot(overlap_matrix_diff, self.coef_cov), overlap_matrix_diff.T)
         diff_se = np.sqrt(np.diag(diff_cov))
         diff_p = [
-            (
-                "NA"
-                if diff_se[i] == 0
-                else 2 * tdist.sf(abs(diff_est[i] / diff_se[i]), self.n_blocks)
-            )
+            ("NA" if diff_se[i] == 0 else 2 * tdist.sf(abs(diff_est[i] / diff_se[i]), self.n_blocks))
             for i in range(self.n_annot)
         ]
 
@@ -497,8 +451,7 @@ class Hsq(LD_Score_Regression):
                 "Enrichment_p": diff_p,
                 "Coefficient": one_d_convert(self.coef),
                 "Coefficient_std_error": self.coef_se,
-                "Coefficient_z-score": one_d_convert(self.coef)
-                / one_d_convert(self.coef_se),
+                "Coefficient_z-score": one_d_convert(self.coef) / one_d_convert(self.coef_se),
             }
         )
         if print_coefficients:
@@ -539,15 +492,7 @@ class Hsq(LD_Score_Regression):
             T = "Observed"
             c = 1
 
-        out = [
-            "Total "
-            + T
-            + " scale h2: "
-            + s(c * self.tot)
-            + " ("
-            + s(c * self.tot_se)
-            + ")"
-        ]
+        out = ["Total " + T + " scale h2: " + s(c * self.tot) + " (" + s(c * self.tot_se) + ")"]
         if self.n_annot > 1:
             if ref_ld_colnames is None:
                 ref_ld_colnames = ["CAT_" + str(i) for i in range(self.n_annot)]
@@ -568,16 +513,12 @@ class Hsq(LD_Score_Regression):
         if self.constrain_intercept:
             out.append("Intercept: constrained to {C}".format(C=s(self.intercept)))
         else:
-            out.append(
-                "Intercept: " + s(self.intercept) + " (" + s(self.intercept_se) + ")"
-            )
+            out.append("Intercept: " + s(self.intercept) + " (" + s(self.intercept_se) + ")")
             if self.mean_chisq > 1:
                 if self.ratio < 0:
                     out.append("Ratio < 0 (usually indicates GC correction).")
                 else:
-                    out.append(
-                        "Ratio: " + s(self.ratio) + " (" + s(self.ratio_se) + ")"
-                    )
+                    out.append("Ratio: " + s(self.ratio) + " (" + s(self.ratio_se) + ")")
             else:
                 out.append("Ratio: NA (mean chi^2 < 1)")
 
@@ -680,27 +621,14 @@ class Gencov(LD_Score_Regression):
     def summary(self, ref_ld_colnames, P=None, K=None):
         """Print summary of the LD Score regression."""
         out = []
-        if (
-            P is not None
-            and K is not None
-            and all((i is not None for i in P))
-            and all((i is not None for i in K))
-        ):
+        if P is not None and K is not None and all((i is not None for i in P)) and all((i is not None for i in K)):
             T = "Liability"
             c = gencov_obs_to_liab(1, P[0], P[1], K[0], K[1])
         else:
             T = "Observed"
             c = 1
 
-        out.append(
-            "Total "
-            + T
-            + " scale gencov: "
-            + s(c * self.tot)
-            + " ("
-            + s(c * self.tot_se)
-            + ")"
-        )
+        out.append("Total " + T + " scale gencov: " + s(c * self.tot) + " (" + s(c * self.tot_se) + ")")
         if self.n_annot > 1:
             out.append("Categories: " + str(" ".join(ref_ld_colnames)))
             out.append(T + " scale gencov: " + s(c * self.cat))
@@ -713,9 +641,7 @@ class Gencov(LD_Score_Regression):
         if self.constrain_intercept:
             out.append("Intercept: constrained to {C}".format(C=s(self.intercept)))
         else:
-            out.append(
-                "Intercept: " + s(self.intercept) + " (" + s(self.intercept_se) + ")"
-            )
+            out.append("Intercept: " + s(self.intercept) + " (" + s(self.intercept_se) + ")")
 
         return remove_brackets("\n".join(out))
 
@@ -913,15 +839,9 @@ class RG(object):
             self.rg_ratio = self.rg = self.rg_se = "NA"
             self.p = self.z = "NA"
         else:
-            rg_ratio = np.array(gencov.tot / np.sqrt(hsq1.tot * hsq2.tot)).reshape(
-                (1, 1)
-            )
-            denom_delete_values = np.sqrt(
-                np.multiply(hsq1.tot_delete_values, hsq2.tot_delete_values)
-            )
-            rg = jk.RatioJackknife(
-                rg_ratio, gencov.tot_delete_values, denom_delete_values
-            )
+            rg_ratio = np.array(gencov.tot / np.sqrt(hsq1.tot * hsq2.tot)).reshape((1, 1))
+            denom_delete_values = np.sqrt(np.multiply(hsq1.tot_delete_values, hsq2.tot_delete_values))
+            rg = jk.RatioJackknife(rg_ratio, gencov.tot_delete_values, denom_delete_values)
             self.rg_jknife = float(rg.jknife_est)
             self.rg_se = float(rg.jknife_se)
             self.rg_ratio = float(rg_ratio)
@@ -935,29 +855,18 @@ class RG(object):
             out.append("Z-score: nan (nan) (h2  out of bounds)")
             out.append("P: nan (nan) (h2  out of bounds)")
             out.append("WARNING: One of the h2's was out of bounds.")
-            out.append(
-                "This usually indicates a data-munging error "
-                + "or that h2 or N is low."
-            )
+            out.append("This usually indicates a data-munging error " + "or that h2 or N is low.")
         elif (self.rg_ratio > 1.2 or self.rg_ratio < -1.2) and not silly:
             out.append("Genetic Correlation: nan (nan) (rg out of bounds) ")
             out.append("Z-score: nan (nan) (rg out of bounds)")
             out.append("P: nan (nan) (rg out of bounds)")
             out.append("WARNING: rg was out of bounds.")
             if self.intercept_gencov is None:
-                out.append(
-                    "This often means that h2 is not significantly "
-                    + "different from zero."
-                )
+                out.append("This often means that h2 is not significantly " + "different from zero.")
             else:
-                out.append(
-                    "This often means that you have constrained"
-                    + " the intercepts to the wrong values."
-                )
+                out.append("This often means that you have constrained" + " the intercepts to the wrong values.")
         else:
-            out.append(
-                "Genetic Correlation: " + s(self.rg_ratio) + " (" + s(self.rg_se) + ")"
-            )
+            out.append("Genetic Correlation: " + s(self.rg_ratio) + " (" + s(self.rg_se) + ")")
             out.append("Z-score: " + s(self.z))
             out.append("P: " + s(self.p))
         return remove_brackets("\n".join(out))

@@ -15,10 +15,7 @@ def gene_set_to_bed(args):
     df = pd.merge(GeneSet, all_genes, on="GENE", how="inner")
     df["START"] = np.maximum(1, df["START"] - args.windowsize)
     df["END"] = df["END"] + args.windowsize
-    iter_df = [
-        ["chr" + (str(x1).lstrip("chr")), x2 - 1, x3]
-        for (x1, x2, x3) in np.array(df[["CHR", "START", "END"]])
-    ]
+    iter_df = [["chr" + (str(x1).lstrip("chr")), x2 - 1, x3] for (x1, x2, x3) in np.array(df[["CHR", "START", "END"]])]
     return BedTool(iter_df).sort().merge()
 
 
@@ -30,9 +27,7 @@ def make_annot_files(args, bed_for_annot):
         usecols=[0, 1, 2, 3],
         names=["CHR", "SNP", "CM", "BP"],
     )
-    iter_bim = [
-        ["chr" + str(x1), x2 - 1, x2] for (x1, x2) in np.array(df_bim[["CHR", "BP"]])
-    ]
+    iter_bim = [["chr" + str(x1), x2 - 1, x2] for (x1, x2) in np.array(df_bim[["CHR", "BP"]])]
     bimbed = BedTool(iter_bim)
     annotbed = bimbed.intersect(bed_for_annot)
     bp = [x.start + 1 for x in annotbed]
@@ -49,9 +44,7 @@ def make_annot_files(args, bed_for_annot):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--gene-set-file", type=str, help="a file of gene names, one line per gene."
-    )
+    parser.add_argument("--gene-set-file", type=str, help="a file of gene names, one line per gene.")
     parser.add_argument(
         "--gene-coord-file",
         type=str,
@@ -79,9 +72,7 @@ if __name__ == "__main__":
         type=str,
         help="plink bim file for the dataset you will use to compute LD scores.",
     )
-    parser.add_argument(
-        "--annot-file", type=str, help="the name of the annot file to output."
-    )
+    parser.add_argument("--annot-file", type=str, help="the name of the annot file to output.")
 
     args = parser.parse_args()
 

@@ -26,17 +26,9 @@ COMPLEMENT = {"A": "T", "T": "A", "C": "G", "G": "C"}
 # bases
 BASES = list(COMPLEMENT.keys())
 # true iff strand ambiguous
-STRAND_AMBIGUOUS = {
-    "".join(x): x[0] == COMPLEMENT[x[1]]
-    for x in it.product(BASES, BASES)
-    if x[0] != x[1]
-}
+STRAND_AMBIGUOUS = {"".join(x): x[0] == COMPLEMENT[x[1]] for x in it.product(BASES, BASES) if x[0] != x[1]}
 # SNPS we want to keep (pairs of alleles)
-VALID_SNPS = {
-    x
-    for x in ["".join(y) for y in it.product(BASES, BASES)]
-    if x[0] != x[1] and not STRAND_AMBIGUOUS[x]
-}
+VALID_SNPS = {x for x in ["".join(y) for y in it.product(BASES, BASES)] if x[0] != x[1] and not STRAND_AMBIGUOUS[x]}
 # T iff SNP 1 has the same alleles as SNP 2 (allowing for strand or ref allele flip).
 MATCH_ALLELES = {
     x
@@ -46,8 +38,7 @@ MATCH_ALLELES = {
     # ref match, strand flip
     ((x[0] == COMPLEMENT[x[2]]) and (x[1] == COMPLEMENT[x[3]])) or
     # ref flip, strand match
-    ((x[0] == x[3]) and (x[1] == x[2]))
-    or ((x[0] == COMPLEMENT[x[3]]) and (x[1] == COMPLEMENT[x[2]]))
+    ((x[0] == x[3]) and (x[1] == x[2])) or ((x[0] == COMPLEMENT[x[3]]) and (x[1] == COMPLEMENT[x[2]]))
 }  # strand and ref flip
 # T iff SNP 1 has the same alleles as SNP 2 w/ ref allele flip.
 FLIP_ALLELES = {
@@ -138,16 +129,12 @@ def _read_M(args, log, n_annot):
         if args.ref_ld:
             M_annot = ps.M_fromlist(_splitp(args.ref_ld), common=(not args.not_M_5_50))
         elif args.ref_ld_chr:
-            M_annot = ps.M_fromlist(
-                _splitp(args.ref_ld_chr), _N_CHR, common=(not args.not_M_5_50)
-            )
+            M_annot = ps.M_fromlist(_splitp(args.ref_ld_chr), _N_CHR, common=(not args.not_M_5_50))
 
     try:
         M_annot = np.array(M_annot).reshape((1, n_annot))
     except ValueError as e:
-        raise ValueError(
-            "# terms in --M must match # of LD Scores in --ref-ld.\n" + str(e.args)
-        )
+        raise ValueError("# terms in --M must match # of LD Scores in --ref-ld.\n" + str(e.args))
 
     return M_annot
 
@@ -156,9 +143,7 @@ def _read_w_ld(args, log):
     """Read regression SNP LD."""
     if (args.w_ld and "," in args.w_ld) or (args.w_ld_chr and "," in args.w_ld_chr):
         raise ValueError("--w-ld must point to a single fileset (no commas allowed).")
-    w_ld = _read_chr_split_files(
-        args.w_ld_chr, args.w_ld, log, "regression weight LD Score", ps.ldscore_fromlist
-    )
+    w_ld = _read_chr_split_files(args.w_ld_chr, args.w_ld, log, "regression weight LD Score", ps.ldscore_fromlist)
     if len(w_ld.columns) != 2:
         raise ValueError("--w-ld may only have one LD Score column.")
     w_ld.columns = ["SNP", "LD_weights"]  # prevent colname conflicts w/ ref ld
@@ -170,19 +155,11 @@ def _read_chr_split_files(chr_arg, not_chr_arg, log, noun, parsefunc, **kwargs):
     """Read files split across 22 chromosomes (annot, ref_ld, w_ld)."""
     try:
         if not_chr_arg:
-            log.log(
-                "Reading {N} from {F} ... ({p})".format(
-                    N=noun, F=not_chr_arg, p=parsefunc.__name__
-                )
-            )
+            log.log("Reading {N} from {F} ... ({p})".format(N=noun, F=not_chr_arg, p=parsefunc.__name__))
             out = parsefunc(_splitp(not_chr_arg), **kwargs)
         elif chr_arg:
             f = ps.sub_chr(chr_arg, "[1-22]")
-            log.log(
-                "Reading {N} from {F} ... ({p})".format(
-                    N=noun, F=f, p=parsefunc.__name__
-                )
-            )
+            log.log("Reading {N} from {F} ... ({p})".format(N=noun, F=f, p=parsefunc.__name__))
             out = parsefunc(_splitp(chr_arg), _N_CHR, **kwargs)
     except ValueError as e:
         log.log("Error parsing {N}.".format(N=noun))
@@ -200,9 +177,7 @@ def _read_sumstats(args, log, fh, alleles=False, dropna=False):
     m = len(sumstats)
     sumstats = sumstats.drop_duplicates(subset="SNP")
     if m > len(sumstats):
-        log.log(
-            "Dropped {M} SNPs with duplicated rs numbers.".format(M=m - len(sumstats))
-        )
+        log.log("Dropped {M} SNPs with duplicated rs numbers.".format(M=m - len(sumstats)))
 
     return sumstats
 
@@ -294,8 +269,8 @@ def cell_type_specific(args, log):
     if args.no_intercept:
         args.intercept_h2 = 1
 
-    M_annot_all_regr, w_ld_cname, ref_ld_cnames_all_regr, sumstats, novar_cols = (
-        _read_ld_sumstats(args, log, args.h2_cts)
+    M_annot_all_regr, w_ld_cname, ref_ld_cnames_all_regr, sumstats, novar_cols = _read_ld_sumstats(
+        args, log, args.h2_cts
     )
     M_tot = np.sum(M_annot_all_regr)
     _check_ld_condnum(args, log, ref_ld_cnames_all_regr)
@@ -310,14 +285,10 @@ def cell_type_specific(args, log):
     ii = np.ravel(sumstats.Z**2 < chisq_max)
     sumstats = sumstats.ix[ii, :]
     log.log(
-        "Removed {M} SNPs with chi^2 > {C} ({N} SNPs remain)".format(
-            C=chisq_max, N=np.sum(ii), M=n_snp - np.sum(ii)
-        )
+        "Removed {M} SNPs with chi^2 > {C} ({N} SNPs remain)".format(C=chisq_max, N=np.sum(ii), M=n_snp - np.sum(ii))
     )
     n_snp = np.sum(ii)  # lambdas are late-binding, so this works
-    ref_ld_all_regr = np.array(sumstats[ref_ld_cnames_all_regr]).reshape(
-        (len(sumstats), -1)
-    )
+    ref_ld_all_regr = np.array(sumstats[ref_ld_cnames_all_regr]).reshape((len(sumstats), -1))
     chisq = np.array(sumstats.Z**2)
     keep_snps = sumstats[["SNP"]]
 
@@ -334,9 +305,7 @@ def cell_type_specific(args, log):
             ct_ld_chr, None, log, "cts reference panel LD Score", ps.ldscore_fromlist
         )
         log.log("Performing regression.")
-        ref_ld_cts = np.array(
-            pd.merge(keep_snps, ref_ld_cts_allsnps, on="SNP", how="left").ix[:, 1:]
-        )
+        ref_ld_cts = np.array(pd.merge(keep_snps, ref_ld_cts_allsnps, on="SNP", how="left").ix[:, 1:])
         if np.any(np.isnan(ref_ld_cts)):
             raise ValueError(
                 "Missing some LD scores from cts files. Are you sure all SNPs in ref-ld-chr are also in ref-ld-chr-cts"
@@ -361,9 +330,7 @@ def cell_type_specific(args, log):
         if args.print_all_cts:
             for i in range(1, len(ct_ld_chr.split(","))):
                 coef, coef_se = hsqhat.coef[i], hsqhat.coef_se[i]
-                results_data.append(
-                    (name + "_" + str(i), coef, coef_se, stats.norm.sf(coef / coef_se))
-                )
+                results_data.append((name + "_" + str(i), coef, coef_se, stats.norm.sf(coef / coef_se)))
 
     df_results = pd.DataFrame(data=results_data, columns=results_columns)
     df_results.sort_values(by="Coefficient_P_value", inplace=True)
@@ -375,16 +342,12 @@ def estimate_h2(args, log):
     """Estimate h2 and partitioned h2."""
     args = copy.deepcopy(args)
     if args.samp_prev is not None and args.pop_prev is not None:
-        args.samp_prev, args.pop_prev = list(
-            map(float, [args.samp_prev, args.pop_prev])
-        )
+        args.samp_prev, args.pop_prev = list(map(float, [args.samp_prev, args.pop_prev]))
     if args.intercept_h2 is not None:
         args.intercept_h2 = float(args.intercept_h2)
     if args.no_intercept:
         args.intercept_h2 = 1
-    M_annot, w_ld_cname, ref_ld_cnames, sumstats, novar_cols = _read_ld_sumstats(
-        args, log, args.h2
-    )
+    M_annot, w_ld_cname, ref_ld_cnames, sumstats, novar_cols = _read_ld_sumstats(args, log, args.h2)
     ref_ld = np.array(sumstats[ref_ld_cnames])
     _check_ld_condnum(args, log, ref_ld_cnames)
     _warn_length(log, sumstats)
@@ -436,18 +399,12 @@ def estimate_h2(args, log):
         _print_delete_values(hsqhat, args.out + ".delete", log)
         _print_part_delete_values(hsqhat, args.out + ".part_delete", log)
 
-    log.log(
-        hsqhat.summary(
-            ref_ld_cnames, P=args.samp_prev, K=args.pop_prev, overlap=args.overlap_annot
-        )
-    )
+    log.log(hsqhat.summary(ref_ld_cnames, P=args.samp_prev, K=args.pop_prev, overlap=args.overlap_annot))
     if args.overlap_annot:
         overlap_matrix, M_tot = _read_annot(args, log)
 
         # overlap_matrix = overlap_matrix[np.array(~novar_cols), np.array(~novar_cols)]#np.logical_not
-        df_results = hsqhat._overlap_output(
-            ref_ld_cnames, overlap_matrix, M_annot, M_tot, args.print_coefficients
-        )
+        df_results = hsqhat._overlap_output(ref_ld_cnames, overlap_matrix, M_annot, M_tot, args.print_coefficients)
         df_results.to_csv(args.out + ".results", sep="\t", index=False)
         log.log("Results printed to " + args.out + ".results")
 
@@ -461,9 +418,7 @@ def estimate_rg(args, log):
     n_pheno = len(rg_paths)
     f = lambda x: _split_or_none(x, n_pheno)
     args.intercept_h2, args.intercept_gencov, args.samp_prev, args.pop_prev = list(
-        map(
-            f, (args.intercept_h2, args.intercept_gencov, args.samp_prev, args.pop_prev)
-        )
+        map(f, (args.intercept_h2, args.intercept_gencov, args.samp_prev, args.pop_prev))
     )
     list(
         map(
@@ -481,9 +436,7 @@ def estimate_rg(args, log):
         args.intercept_gencov = [0 for _ in range(n_pheno)]
     p1 = rg_paths[0]
     out_prefix = args.out + rg_files[0]
-    M_annot, w_ld_cname, ref_ld_cnames, sumstats, _ = _read_ld_sumstats(
-        args, log, p1, alleles=True, dropna=True
-    )
+    M_annot, w_ld_cname, ref_ld_cnames, sumstats, _ = _read_ld_sumstats(args, log, p1, alleles=True, dropna=True)
     RG = []
     n_annot = M_annot.shape[1]
     if n_annot == 1 and args.two_step is None and args.intercept_h2 is None:
@@ -512,9 +465,7 @@ def estimate_rg(args, log):
             if len(RG) <= i:  # if exception raised before appending to RG
                 RG.append(None)
 
-    log.log(
-        "\nSummary of Genetic Correlation Results\n" + _get_rg_table(rg_paths, RG, args)
-    )
+    log.log("\nSummary of Genetic Correlation Results\n" + _get_rg_table(rg_paths, RG, args))
     return RG
 
 
@@ -524,9 +475,7 @@ def _read_other_sumstats(args, log, p2, sumstats, ref_ld_cnames):
     loop = loop.dropna(how="any")
     alleles = loop.A1 + loop.A2 + loop.A1x + loop.A2x
     if not args.no_check_alleles:
-        loop = _select_and_log(
-            loop, _filter_alleles(alleles), log, "{N} SNPs with valid alleles."
-        )
+        loop = _select_and_log(loop, _filter_alleles(alleles), log, "{N} SNPs with valid alleles.")
         loop["Z2"] = _align_alleles(loop.Z2, alleles)
 
     loop = loop.drop(["A1", "A1x", "A2", "A2x"], axis=1)
@@ -559,12 +508,8 @@ def _get_rg_table(rg_paths, RG, args):
                 args.pop_prev[1:],
             )
         )
-        x["h2_liab"] = list(
-            map(lambda x, y: x * y, c, list(map(t("tot"), list(map(t("hsq2"), RG)))))
-        )
-        x["h2_liab_se"] = list(
-            map(lambda x, y: x * y, c, list(map(t("tot_se"), list(map(t("hsq2"), RG)))))
-        )
+        x["h2_liab"] = list(map(lambda x, y: x * y, c, list(map(t("tot"), list(map(t("hsq2"), RG))))))
+        x["h2_liab_se"] = list(map(lambda x, y: x * y, c, list(map(t("tot_se"), list(map(t("hsq2"), RG))))))
     else:
         x["h2_obs"] = list(map(t("tot"), list(map(t("hsq2"), RG))))
         x["h2_obs_se"] = list(map(t("tot_se"), list(map(t("hsq2"), RG))))
@@ -598,9 +543,7 @@ def _print_gencor(args, log, rghat, ref_ld_cnames, i, rg_paths, print_hsq1):
 def _merge_sumstats_sumstats(args, sumstats1, sumstats2, log):
     """Merge two sets of summary statistics."""
     sumstats1.rename(columns={"N": "N1", "Z": "Z1"}, inplace=True)
-    sumstats2.rename(
-        columns={"A1": "A1x", "A2": "A2x", "N": "N2", "Z": "Z2"}, inplace=True
-    )
+    sumstats2.rename(columns={"A1": "A1x", "A2": "A2x", "N": "N2", "Z": "Z2"}, inplace=True)
     x = _merge_and_log(sumstats1, sumstats2, "summary statistics", log)
     return x
 
@@ -690,6 +633,4 @@ def _split_or_none(x, n):
 def _check_arg_len(x, n):
     x, m = x
     if len(x) != n:
-        raise ValueError(
-            "{M} must have the same number of arguments as --rg/--h2.".format(M=m)
-        )
+        raise ValueError("{M} must have the same number of arguments as --rg/--h2.".format(M=m))

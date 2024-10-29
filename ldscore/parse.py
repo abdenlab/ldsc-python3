@@ -103,9 +103,7 @@ def ldscore_fromlist(flist, num=None):
         y = ldscore(fh, num)
         if i > 0:
             if not series_eq(y.SNP, ldscore_array[0].SNP):
-                raise ValueError(
-                    "LD Scores for concatenation must have identical SNP columns."
-                )
+                raise ValueError("LD Scores for concatenation must have identical SNP columns.")
             else:  # keep SNP column from only the first file
                 y = y.drop(["SNP"], axis=1)
 
@@ -119,9 +117,7 @@ def ldscore_fromlist(flist, num=None):
 def l2_parser(fh, compression):
     """Parse LD Score files"""
     x = read_csv(fh, header=0, compression=compression)
-    if (
-        "MAF" in x.columns and "CM" in x.columns
-    ):  # for backwards compatibility w/ v<1.0.0
+    if "MAF" in x.columns and "CM" in x.columns:  # for backwards compatibility w/ v<1.0.0
         x = x.drop(["MAF", "CM"], axis=1)
     return x
 
@@ -226,15 +222,11 @@ def annot(fh_list, num=None, frqfile=None):
                 ]
             else:
                 df_annot_chr_list = [
-                    annot_parser(
-                        sub_chr(fh, chrom) + annot_suffix[i], annot_compression[i]
-                    )
+                    annot_parser(sub_chr(fh, chrom) + annot_suffix[i], annot_compression[i])
                     for i, fh in enumerate(fh_list)
                 ]
 
-            annot_matrix_chr_list = [
-                np.matrix(df_annot_chr) for df_annot_chr in df_annot_chr_list
-            ]
+            annot_matrix_chr_list = [np.matrix(df_annot_chr) for df_annot_chr in df_annot_chr_list]
             annot_matrix_chr = np.hstack(annot_matrix_chr_list)
             y.append(np.dot(annot_matrix_chr.T, annot_matrix_chr))
             M_tot += len(df_annot_chr_list[0])
@@ -262,10 +254,7 @@ def annot(fh_list, num=None, frqfile=None):
             ]
 
         else:
-            df_annot_list = [
-                annot_parser(fh + annot_suffix[i], annot_compression[i])
-                for i, fh in enumerate(fh_list)
-            ]
+            df_annot_list = [annot_parser(fh + annot_suffix[i], annot_compression[i]) for i, fh in enumerate(fh_list)]
 
         annot_matrix_list = [np.matrix(y) for y in df_annot_list]
         annot_matrix = np.hstack(annot_matrix_list)
@@ -314,18 +303,14 @@ def __ID_List_Factory__(colnames, keepcol, fname_end, header=None, usecols=None)
             l = self.IDList.columns[0]
             merge_df = externalDf.iloc[:, [0]]
             merge_df["keep"] = True
-            z = pd.merge(
-                self.IDList, merge_df, how="left", left_on=l, right_on=r, sort=False
-            )
+            z = pd.merge(self.IDList, merge_df, how="left", left_on=l, right_on=r, sort=False)
             ii = z["keep"] == True
             return np.nonzero(ii)[0]
 
     return IDContainer
 
 
-PlinkBIMFile = __ID_List_Factory__(
-    ["CHR", "SNP", "CM", "BP", "A1", "A2"], 1, ".bim", usecols=[0, 1, 2, 3, 4, 5]
-)
+PlinkBIMFile = __ID_List_Factory__(["CHR", "SNP", "CM", "BP", "A1", "A2"], 1, ".bim", usecols=[0, 1, 2, 3, 4, 5])
 PlinkFAMFile = __ID_List_Factory__(["IID"], 0, ".fam", usecols=[1])
 FilterFile = __ID_List_Factory__(["ID"], 0, None, usecols=[0])
 AnnotFile = __ID_List_Factory__(None, 2, None, header=0, usecols=None)

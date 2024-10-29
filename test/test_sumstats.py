@@ -5,8 +5,7 @@ import numpy as np
 import pandas as pd
 from nose.plugins.attrib import attr
 from nose.tools import *
-from numpy.testing import (assert_allclose, assert_array_almost_equal,
-                           assert_array_equal)
+from numpy.testing import assert_allclose, assert_array_almost_equal, assert_array_equal
 from pandas.util.testing import assert_frame_equal, assert_series_equal
 
 import ldscore.parse as ps
@@ -79,16 +78,12 @@ def test_filter_bad_alleles():
 def test_read_annot():
     ref_ld_chr = None
     ref_ld = os.path.join(DIR, "annot_test/test")
-    overlap_matrix, M_tot = s._read_chr_split_files(
-        ref_ld_chr, ref_ld, log, "annot matrix", ps.annot, frqfile=None
-    )
+    overlap_matrix, M_tot = s._read_chr_split_files(ref_ld_chr, ref_ld, log, "annot matrix", ps.annot, frqfile=None)
     assert_array_equal(overlap_matrix, [[1, 0, 0], [0, 2, 2], [0, 2, 2]])
     assert_array_equal(M_tot, 3)
 
     frqfile = os.path.join(DIR, "annot_test/test1")
-    overlap_matrix, M_tot = s._read_chr_split_files(
-        ref_ld_chr, ref_ld, log, "annot matrix", ps.annot, frqfile=frqfile
-    )
+    overlap_matrix, M_tot = s._read_chr_split_files(ref_ld_chr, ref_ld, log, "annot matrix", ps.annot, frqfile=frqfile)
     assert_array_equal(overlap_matrix, [[1, 0, 0], [0, 1, 1], [0, 1, 1]])
     assert_array_equal(M_tot, 2)
 
@@ -215,9 +210,7 @@ class Test_RG_Statistical:
         args = parser.parse_args("")
         args.ref_ld = DIR + "/simulate_test/ldscore/twold_onefile"
         args.w_ld = DIR + "/simulate_test/ldscore/w"
-        args.rg = ",".join(
-            (DIR + "/simulate_test/sumstats/" + str(i) for i in range(N_REP))
-        )
+        args.rg = ",".join((DIR + "/simulate_test/sumstats/" + str(i) for i in range(N_REP)))
         args.out = DIR + "/simulate_test/1"
         x = s.estimate_rg(args, log)
         args.intercept_gencov = ",".join(("0" for _ in range(N_REP)))
@@ -230,9 +223,7 @@ class Test_RG_Statistical:
         assert_allclose(np.nanmean(list(map(t("rg_ratio"), self.rg))), 0, atol=0.02)
 
     def test_rg_ratio_noint(self):
-        assert_allclose(
-            np.nanmean(list(map(t("rg_ratio"), self.rg_noint))), 0, atol=0.02
-        )
+        assert_allclose(np.nanmean(list(map(t("rg_ratio"), self.rg_noint))), 0, atol=0.02)
 
     def test_rg_se(self):
         assert_allclose(
@@ -400,9 +391,7 @@ class Test_H2_Statistical(unittest.TestCase):
         # should be h^2/M = [[0.3, 0.9]] / M
         coef = np.array(((0.3, 0.9))) / self.h2[0].M
         for h in [self.h2, self.h2_noint]:
-            assert np.all(
-                np.abs(np.nanmean(list(map(t("coef"), h)), axis=0) - coef) < 1e6
-            )
+            assert np.all(np.abs(np.nanmean(list(map(t("coef"), h)), axis=0) - coef) < 1e6)
 
     def test_coef_se(self):
         for h in [self.h2, self.h2_noint]:
@@ -413,16 +402,12 @@ class Test_H2_Statistical(unittest.TestCase):
 
     def test_prop(self):
         for h in [self.h2, self.h2_noint]:
-            assert np.all(
-                np.nanmean(list(map(t("prop"), h)), axis=0) - [1 / 3, 2 / 3] < 0.02
-            )
+            assert np.all(np.nanmean(list(map(t("prop"), h)), axis=0) - [1 / 3, 2 / 3] < 0.02)
 
     def test_prop_se(self):
         for h in [self.h2, self.h2_noint]:
             assert np.all(
-                np.nanmean(list(map(t("prop_se"), h)), axis=0)
-                - np.nanstd(list(map(t("prop"), h)), axis=0)
-                < 0.02
+                np.nanmean(list(map(t("prop_se"), h)), axis=0) - np.nanstd(list(map(t("prop"), h)), axis=0) < 0.02
             )
 
     def test_int(self):
@@ -447,9 +432,7 @@ class Test_Estimate(unittest.TestCase):
         args.print_cov = True  # right now just check no runtime errors
         args.print_delete_vals = True
         x = s.estimate_h2(args, log)
-        args.M = str(
-            float(open(DIR + "/simulate_test/ldscore/oneld_onefile.l2.M_5_50").read())
-        )
+        args.M = str(float(open(DIR + "/simulate_test/ldscore/oneld_onefile.l2.M_5_50").read()))
         y = s.estimate_h2(args, log)
         assert_array_almost_equal(x.tot, y.tot)
         assert_array_almost_equal(x.tot_se, y.tot_se)
@@ -465,18 +448,10 @@ class Test_Estimate(unittest.TestCase):
         args.h2 = DIR + "/simulate_test/sumstats/555"
         args.out = DIR + "/simulate_test/"
         x = s.estimate_h2(args, log)
-        args.ref_ld = (
-            DIR
-            + "/simulate_test/ldscore/twold_firstfile,"
-            + DIR
-            + "/simulate_test/ldscore/twold_secondfile"
-        )
+        args.ref_ld = DIR + "/simulate_test/ldscore/twold_firstfile," + DIR + "/simulate_test/ldscore/twold_secondfile"
         y = s.estimate_h2(args, log)
         args.ref_ld_chr = (
-            DIR
-            + "/simulate_test/ldscore/twold_firstfile,"
-            + DIR
-            + "/simulate_test/ldscore/twold_secondfile"
+            DIR + "/simulate_test/ldscore/twold_firstfile," + DIR + "/simulate_test/ldscore/twold_secondfile"
         )
         z = s.estimate_h2(args, log)
         assert_almost_equal(x.tot, y.tot)
@@ -497,11 +472,7 @@ class Test_Estimate(unittest.TestCase):
         args.rg = ",".join([DIR + "/simulate_test/sumstats/1" for _ in range(2)])
         args.out = DIR + "/simulate_test/1"
         x = s.estimate_rg(args, log)[0]
-        args.M = (
-            open(DIR + "/simulate_test/ldscore/oneld_onefile.l2.M_5_50", "rb")
-            .read()
-            .rstrip("\n")
-        )
+        args.M = open(DIR + "/simulate_test/ldscore/oneld_onefile.l2.M_5_50", "rb").read().rstrip("\n")
         y = s.estimate_rg(args, log)[0]
         assert_array_almost_equal(x.rg_ratio, y.rg_ratio)
         assert_array_almost_equal(x.rg_se, y.rg_se)
@@ -519,18 +490,10 @@ class Test_Estimate(unittest.TestCase):
         args.print_cov = True  # right now just check no runtime errors
         args.print_delete_vals = True
         x = s.estimate_rg(args, log)[0]
-        args.ref_ld = (
-            DIR
-            + "/simulate_test/ldscore/twold_firstfile,"
-            + DIR
-            + "/simulate_test/ldscore/twold_secondfile"
-        )
+        args.ref_ld = DIR + "/simulate_test/ldscore/twold_firstfile," + DIR + "/simulate_test/ldscore/twold_secondfile"
         y = s.estimate_rg(args, log)[0]
         args.ref_ld_chr = (
-            DIR
-            + "/simulate_test/ldscore/twold_firstfile,"
-            + DIR
-            + "/simulate_test/ldscore/twold_secondfile"
+            DIR + "/simulate_test/ldscore/twold_firstfile," + DIR + "/simulate_test/ldscore/twold_secondfile"
         )
         z = s.estimate_rg(args, log)[0]
         assert_almost_equal(x.rg_ratio, y.rg_ratio)

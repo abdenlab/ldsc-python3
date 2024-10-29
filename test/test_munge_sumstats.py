@@ -3,8 +3,7 @@ import unittest
 import nose
 import numpy as np
 import pandas as pd
-from numpy.testing import (assert_allclose, assert_array_almost_equal,
-                           assert_array_equal)
+from numpy.testing import assert_allclose, assert_array_almost_equal, assert_array_equal
 from pandas.util.testing import assert_frame_equal, assert_series_equal
 
 import munge_sumstats as munge
@@ -127,9 +126,7 @@ def test_multiple_info():
 def test_filter_frq():
     frq = pd.Series([-1, 0, 0.005, 0.4, 0.6, 0.999, 1, 2])
     x = munge.filter_frq(frq, log, args)
-    assert_series_equal(
-        x, pd.Series([False, False, False, True, True, False, False, False])
-    )
+    assert_series_equal(x, pd.Series([False, False, False, True, True, False, False, False]))
 
 
 def test_filter_alleles():
@@ -142,22 +139,14 @@ def test_filter_alleles():
 class test_allele_merge(unittest.TestCase):
 
     def setUp(self):
-        self.dat = pd.DataFrame(
-            np.transpose([["a", "b", "c"], ["A", "T", "C"], ["C", "G", "A"]])
-        )
+        self.dat = pd.DataFrame(np.transpose([["a", "b", "c"], ["A", "T", "C"], ["C", "G", "A"]]))
         self.dat.columns = ["SNP", "A1", "A2"]
-        self.alleles = pd.DataFrame(
-            np.transpose([["a", "extra", "b", "c"], ["AG", "TC", "AC", "AC"]])
-        )
+        self.alleles = pd.DataFrame(np.transpose([["a", "extra", "b", "c"], ["AG", "TC", "AC", "AC"]]))
         self.alleles.columns = ["SNP", "MA"]
 
     def test_merge(self):
         x = munge.allele_merge(self.dat, self.alleles, log)
-        answer = pd.DataFrame(
-            np.transpose(
-                [["a", "extra", "b", "c"], ["a", "a", "T", "C"], ["a", "a", "G", "A"]]
-            )
-        )
+        answer = pd.DataFrame(np.transpose([["a", "extra", "b", "c"], ["a", "a", "T", "C"], ["a", "a", "G", "A"]]))
         answer.columns = ["SNP", "A1", "A2"]
         answer.loc[[0, 1], ["A1", "A2"]] = float("nan")
         assert_frame_equal(x, answer)
@@ -195,9 +184,7 @@ class test_parse_dat(unittest.TestCase):
         merge_alleles = pd.DataFrame()
         merge_alleles["SNP"] = ["rs" + str(i) for i in range(3)]
         merge_alleles["MA"] = ["AG", "AG", "AG"]
-        dat = munge.parse_dat(
-            self.dat_gen, self.convert_colname, merge_alleles, log, self.args
-        )
+        dat = munge.parse_dat(self.dat_gen, self.convert_colname, merge_alleles, log, self.args)
         print(self.dat.loc[0:2, ["SNP", "A1", "A2", "P"]])
         assert_frame_equal(dat, self.dat.loc[0:2, ["SNP", "A1", "A2", "P"]])
 
@@ -213,9 +200,7 @@ class test_parse_dat(unittest.TestCase):
             self.dat.loc[5:9, :].reset_index(drop=True),
         ]
         dat = munge.parse_dat(self.dat_gen, self.convert_colname, None, log, self.args)
-        assert_frame_equal(
-            dat, self.dat.loc[2:, ["SNP", "A1", "A2", "P"]].reset_index(drop=True)
-        )
+        assert_frame_equal(dat, self.dat.loc[2:, ["SNP", "A1", "A2", "P"]].reset_index(drop=True))
 
 
 def test_clean_header():
@@ -307,17 +292,13 @@ class test_end_to_end(unittest.TestCase):
 
     def test_basic(self):
         x = munge.munge_sumstats(self.args, p=False)
-        correct = pd.read_csv(
-            "test/munge_test/correct.sumstats", delim_whitespace=True, header=0
-        )
+        correct = pd.read_csv("test/munge_test/correct.sumstats", delim_whitespace=True, header=0)
         assert_frame_equal(x, correct)
 
     def test_merge_alleles(self):
         self.args.merge_alleles = "test/munge_test/merge_alleles"
         x = munge.munge_sumstats(self.args, p=False)
-        correct = pd.read_csv(
-            "test/munge_test/correct_merge.sumstats", delim_whitespace=True, header=0
-        )
+        correct = pd.read_csv("test/munge_test/correct_merge.sumstats", delim_whitespace=True, header=0)
         assert_frame_equal(x, correct)
 
     def test_bad_merge_alleles(self):

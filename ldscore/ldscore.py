@@ -65,9 +65,7 @@ class __GenotypeArrayInMemory__(object):
     matrices, e.g., plink .bed files, etc
     """
 
-    def __init__(
-        self, fname, n, snp_list, keep_snps=None, keep_indivs=None, mafMin=None
-    ):
+    def __init__(self, fname, n, snp_list, keep_snps=None, keep_indivs=None, mafMin=None):
         self.m = len(snp_list.IDList)
         self.n = n
         self.keep_snps = keep_snps
@@ -83,9 +81,7 @@ class __GenotypeArrayInMemory__(object):
             if np.any(keep_indivs > self.n):
                 raise ValueError("keep_indivs indices out of bounds")
 
-            (self.geno, self.m, self.n) = self.__filter_indivs__(
-                self.geno, keep_indivs, self.m, self.n
-            )
+            (self.geno, self.m, self.n) = self.__filter_indivs__(self.geno, keep_indivs, self.m, self.n)
 
             if self.n > 0:
                 print("After filtering, {n} individuals remain".format(n=self.n))
@@ -98,8 +94,8 @@ class __GenotypeArrayInMemory__(object):
             if np.any(keep_snps > self.m):  # if keep_snps is None, this returns False
                 raise ValueError("keep_snps indices out of bounds")
 
-        (self.geno, self.m, self.n, self.kept_snps, self.freq) = (
-            self.__filter_snps_maf__(self.geno, self.m, self.n, self.mafMin, keep_snps)
+        (self.geno, self.m, self.n, self.kept_snps, self.freq) = self.__filter_snps_maf__(
+            self.geno, self.m, self.n, self.mafMin, keep_snps
         )
 
         if self.m > 0:
@@ -250,9 +246,7 @@ class PlinkBEDFile(__GenotypeArrayInMemory__):
     Interface for Plink .bed format
     """
 
-    def __init__(
-        self, fname, n, snp_list, keep_snps=None, keep_indivs=None, mafMin=None
-    ):
+    def __init__(self, fname, n, snp_list, keep_snps=None, keep_indivs=None, mafMin=None):
         self._bedcode = {
             2: ba.bitarray("11"),
             9: ba.bitarray("10"),
@@ -362,9 +356,7 @@ class PlinkBEDFile(__GenotypeArrayInMemory__):
             major_ct = b + c  # number of copies of the major allele
             n_nomiss = n - a + c  # number of individuals with nonmissing genotypes
             f = major_ct / (2 * n_nomiss) if n_nomiss > 0 else 0
-            het_miss_ct = (
-                a + b - 2 * c
-            )  # remove SNPs that are only either het or missing
+            het_miss_ct = a + b - 2 * c  # remove SNPs that are only either het or missing
             if np.minimum(f, 1 - f) > mafMin and het_miss_ct < n:
                 freq.append(f)
                 y += z

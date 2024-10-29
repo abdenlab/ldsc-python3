@@ -3,7 +3,6 @@
 import argparse
 import bz2
 import gzip
-import os
 import sys
 import time
 import traceback

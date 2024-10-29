@@ -7,7 +7,6 @@ regression is implemented in the regressions module.
 """
 
 import copy
-import glob
 import itertools as it
 import os
 import sys

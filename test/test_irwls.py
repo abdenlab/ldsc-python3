@@ -1,7 +1,7 @@
 import unittest
 
 import numpy as np
-from nose.tools import assert_raises
+import pytest
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 
 from ldscore.irwls import IRWLS
@@ -51,7 +51,8 @@ class Test_IRWLS_1D(unittest.TestCase):
 
     def test_neg_weight(self):
         self.w *= 0
-        assert_raises(ValueError, IRWLS._weight, self.x, self.w)
+        with pytest.raises(ValueError):
+            IRWLS._weight(self.x, self.w)
 
     def test_wls_1d(self):
         z = IRWLS.wls(self.x, self.y, self.w)

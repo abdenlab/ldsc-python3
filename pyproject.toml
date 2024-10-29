@@ -2,7 +2,7 @@
 name = "ldsc"
 version = "2.0.0"
 description = "LD Score Regression (LDSC)"
-authors = ["Brendan Bulik-Sullivan", "Hilary Finucane", "Thomas Reimonn <thomas.reimonn@umassmed.edu>"]
+authors = ["Thomas Reimonn <thomas.reimonn@umassmed.edu>", "Brendan Bulik-Sullivan", "Hilary Finucane"]
 license = "GPL-3.0"
 readme = "README.md"
 homepage = "https://github.com/abdenlab/ldsc-python3"

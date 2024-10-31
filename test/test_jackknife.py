@@ -1,10 +1,13 @@
 from __future__ import division
-import ldscore.jackknife as jk
+
 import unittest
-import numpy as np
+
 import nose
-from numpy.testing import assert_array_equal, assert_array_almost_equal
+import numpy as np
 from nose.tools import assert_raises
+from numpy.testing import assert_array_almost_equal, assert_array_equal
+
+import ldscore.jackknife as jk
 
 
 class Test_Jackknife(unittest.TestCase):

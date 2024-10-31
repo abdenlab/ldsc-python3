@@ -9,16 +9,21 @@ LDSC is a command line tool for estimating
 
 '''
 from __future__ import division
-import ldscore.ldscore as ld
-import ldscore.parse as ps
-import ldscore.sumstats as sumstats
-import ldscore.regressions as reg
+
+import argparse
+import sys
+import time
+import traceback
+from itertools import product
+from subprocess import call
+
 import numpy as np
 import pandas as pd
-from subprocess import call
-from itertools import product
-import time, sys, traceback, argparse
 
+import ldscore.ldscore as ld
+import ldscore.parse as ps
+import ldscore.regressions as reg
+import ldscore.sumstats as sumstats
 
 try:
     x = pd.DataFrame({'A': [1, 2, 3]})

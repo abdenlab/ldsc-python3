@@ -303,7 +303,6 @@ def ldscore(args, log):
         array_snps,
         keep_snps=keep_snps,
         keep_indivs=keep_indivs,
-        mafMin=args.maf,
     )
 
     # filter annot_matrix down to only SNPs passing MAF cutoffs

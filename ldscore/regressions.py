@@ -8,16 +8,15 @@ Last column = intercept.
 
 """
 
-from __future__ import division
-
 from collections import namedtuple
 
-import jackknife as jk
 import numpy as np
 import pandas as pd
-from irwls import IRWLS
 from scipy.stats import chi2, norm
 from scipy.stats import t as tdist
+
+from . import jackknife as jk
+from .irwls import IRWLS
 
 np.seterr(divide="raise", invalid="raise")
 
@@ -181,7 +180,7 @@ class LD_Score_Regression(object):
             n1 = np.sum(step1_ii)
             self.twostep_filtered = n_snp - n1
             x1 = x[np.squeeze(step1_ii), :]
-            yp1, w1, N1, initial_w1 = map(lambda a: a[step1_ii].reshape((n1, 1)), (yp, w, N, initial_w))
+            yp1, w1, N1, initial_w1 = [a[step1_ii].reshape((n1, 1)) for a in (yp, w, N, initial_w)]
             update_func1 = lambda a: self._update_func(a, x1, w1, N1, M_tot, Nbar, ii=step1_ii)
             step1_jknife = IRWLS(x1, yp1, update_func1, n_blocks, slow=slow, w=initial_w1)
             step1_int, _ = self._intercept(step1_jknife)
@@ -452,7 +451,7 @@ class Hsq(LD_Score_Regression):
         out = ["Total " + T + " scale h2: " + s(c * self.tot) + " (" + s(c * self.tot_se) + ")"]
         if self.n_annot > 1:
             if ref_ld_colnames is None:
-                ref_ld_colnames = ["CAT_" + str(i) for i in xrange(self.n_annot)]
+                ref_ld_colnames = ["CAT_" + str(i) for i in range(self.n_annot)]
 
             out.append("Categories: " + " ".join(ref_ld_colnames))
 

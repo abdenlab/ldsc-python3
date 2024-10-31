@@ -6,8 +6,6 @@ into memory and checking that the input makes sense. There is no math here. LD S
 regression is implemented in the regressions module.
 """
 
-from __future__ import division
-
 import copy
 import glob
 import itertools as it
@@ -17,25 +15,24 @@ import traceback
 
 import numpy as np
 import pandas as pd
-import parse as ps
-import regressions as reg
 from scipy import stats
+
+from . import parse as ps
+from . import regressions as reg
 
 _N_CHR = 22
 # complementary bases
 COMPLEMENT = {"A": "T", "T": "A", "C": "G", "G": "C"}
 # bases
-BASES = COMPLEMENT.keys()
+BASES = list(COMPLEMENT.keys())
 # true iff strand ambiguous
 STRAND_AMBIGUOUS = {"".join(x): x[0] == COMPLEMENT[x[1]] for x in it.product(BASES, BASES) if x[0] != x[1]}
 # SNPS we want to keep (pairs of alleles)
-VALID_SNPS = {
-    x for x in map(lambda y: "".join(y), it.product(BASES, BASES)) if x[0] != x[1] and not STRAND_AMBIGUOUS[x]
-}
+VALID_SNPS = {x for x in ["".join(y) for y in it.product(BASES, BASES)] if x[0] != x[1] and not STRAND_AMBIGUOUS[x]}
 # T iff SNP 1 has the same alleles as SNP 2 (allowing for strand or ref allele flip).
 MATCH_ALLELES = {
     x
-    for x in map(lambda y: "".join(y), it.product(VALID_SNPS, VALID_SNPS))
+    for x in ["".join(y) for y in it.product(VALID_SNPS, VALID_SNPS)]
     # strand and ref match
     if ((x[0] == x[2]) and (x[1] == x[3])) or
     # ref match, strand flip
@@ -324,7 +321,7 @@ def estimate_h2(args, log):
     """Estimate h2 and partitioned h2."""
     args = copy.deepcopy(args)
     if args.samp_prev is not None and args.pop_prev is not None:
-        args.samp_prev, args.pop_prev = map(float, [args.samp_prev, args.pop_prev])
+        args.samp_prev, args.pop_prev = list(map(float, [args.samp_prev, args.pop_prev]))
     if args.intercept_h2 is not None:
         args.intercept_h2 = float(args.intercept_h2)
     if args.no_intercept:
@@ -399,21 +396,23 @@ def estimate_rg(args, log):
     rg_paths, rg_files = _parse_rg(args.rg)
     n_pheno = len(rg_paths)
     f = lambda x: _split_or_none(x, n_pheno)
-    args.intercept_h2, args.intercept_gencov, args.samp_prev, args.pop_prev = map(
-        f, (args.intercept_h2, args.intercept_gencov, args.samp_prev, args.pop_prev)
+    args.intercept_h2, args.intercept_gencov, args.samp_prev, args.pop_prev = list(
+        map(f, (args.intercept_h2, args.intercept_gencov, args.samp_prev, args.pop_prev))
     )
-    map(
-        lambda x: _check_arg_len(x, n_pheno),
-        (
-            (args.intercept_h2, "--intercept-h2"),
-            (args.intercept_gencov, "--intercept-gencov"),
-            (args.samp_prev, "--samp-prev"),
-            (args.pop_prev, "--pop-prev"),
-        ),
+    list(
+        map(
+            lambda x: _check_arg_len(x, n_pheno),
+            (
+                (args.intercept_h2, "--intercept-h2"),
+                (args.intercept_gencov, "--intercept-gencov"),
+                (args.samp_prev, "--samp-prev"),
+                (args.pop_prev, "--pop-prev"),
+            ),
+        )
     )
     if args.no_intercept:
-        args.intercept_h2 = [1 for _ in xrange(n_pheno)]
-        args.intercept_gencov = [0 for _ in xrange(n_pheno)]
+        args.intercept_h2 = [1 for _ in range(n_pheno)]
+        args.intercept_gencov = [0 for _ in range(n_pheno)]
     p1 = rg_paths[0]
     out_prefix = args.out + rg_files[0]
     M_annot, w_ld_cname, ref_ld_cnames, sumstats, _ = _read_ld_sumstats(args, log, p1, alleles=True, dropna=True)
@@ -468,12 +467,12 @@ def _get_rg_table(rg_paths, RG, args):
     """Print a table of genetic correlations."""
     t = lambda attr: lambda obj: getattr(obj, attr, "NA")
     x = pd.DataFrame()
-    x["p1"] = [rg_paths[0] for i in xrange(1, len(rg_paths))]
+    x["p1"] = [rg_paths[0] for i in range(1, len(rg_paths))]
     x["p2"] = rg_paths[1 : len(rg_paths)]
-    x["rg"] = map(t("rg_ratio"), RG)
-    x["se"] = map(t("rg_se"), RG)
-    x["z"] = map(t("z"), RG)
-    x["p"] = map(t("p"), RG)
+    x["rg"] = list(map(t("rg_ratio"), RG))
+    x["se"] = list(map(t("rg_se"), RG))
+    x["z"] = list(map(t("z"), RG))
+    x["p"] = list(map(t("p"), RG))
     if (
         args.samp_prev is not None
         and args.pop_prev is not None
@@ -481,17 +480,17 @@ def _get_rg_table(rg_paths, RG, args):
         and all((i is not None for it in args.pop_prev))
     ):
 
-        c = map(lambda x, y: reg.h2_obs_to_liab(1, x, y), args.samp_prev[1:], args.pop_prev[1:])
-        x["h2_liab"] = map(lambda x, y: x * y, c, map(t("tot"), map(t("hsq2"), RG)))
-        x["h2_liab_se"] = map(lambda x, y: x * y, c, map(t("tot_se"), map(t("hsq2"), RG)))
+        c = list(map(lambda x, y: reg.h2_obs_to_liab(1, x, y), args.samp_prev[1:], args.pop_prev[1:]))
+        x["h2_liab"] = list(map(lambda x, y: x * y, c, list(map(t("tot"), list(map(t("hsq2"), RG))))))
+        x["h2_liab_se"] = list(map(lambda x, y: x * y, c, list(map(t("tot_se"), list(map(t("hsq2"), RG))))))
     else:
-        x["h2_obs"] = map(t("tot"), map(t("hsq2"), RG))
-        x["h2_obs_se"] = map(t("tot_se"), map(t("hsq2"), RG))
+        x["h2_obs"] = list(map(t("tot"), list(map(t("hsq2"), RG))))
+        x["h2_obs_se"] = list(map(t("tot_se"), list(map(t("hsq2"), RG))))
 
-    x["h2_int"] = map(t("intercept"), map(t("hsq2"), RG))
-    x["h2_int_se"] = map(t("intercept_se"), map(t("hsq2"), RG))
-    x["gcov_int"] = map(t("intercept"), map(t("gencov"), RG))
-    x["gcov_int_se"] = map(t("intercept_se"), map(t("gencov"), RG))
+    x["h2_int"] = list(map(t("intercept"), list(map(t("hsq2"), RG))))
+    x["h2_int_se"] = list(map(t("intercept_se"), list(map(t("hsq2"), RG))))
+    x["gcov_int"] = list(map(t("intercept"), list(map(t("gencov"), RG))))
+    x["gcov_int_se"] = list(map(t("intercept_se"), list(map(t("gencov"), RG))))
     return x.to_string(header=True, index=False) + "\n"
 
 
@@ -594,9 +593,9 @@ def _print_rg_cov(rghat, fh, log):
 
 def _split_or_none(x, n):
     if x is not None:
-        y = map(float, x.replace("N", "-").split(","))
+        y = list(map(float, x.replace("N", "-").split(",")))
     else:
-        y = [None for _ in xrange(n)]
+        y = [None for _ in range(n)]
     return y
 
 

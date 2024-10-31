@@ -1,5 +1,3 @@
-from __future__ import division
-
 import os
 import unittest
 
@@ -58,14 +56,14 @@ class Test_ldscore(unittest.TestCase):
     def test_ldscore(self):
         x = ps.ldscore(os.path.join(DIR, "parse_test/test"))
         assert_equal(list(x["SNP"]), ["rs" + str(i) for i in range(1, 23)])
-        assert_equal(list(x["AL2"]), range(1, 23))
-        assert_equal(list(x["BL2"]), range(2, 46, 2))
+        assert_equal(list(x["AL2"]), list(range(1, 23)))
+        assert_equal(list(x["BL2"]), list(range(2, 46, 2)))
 
     def test_ldscore_loop(self):
         x = ps.ldscore(os.path.join(DIR, "parse_test/test"), 2)
         assert_equal(list(x["SNP"]), ["rs" + str(i) for i in range(1, 3)])
-        assert_equal(list(x["AL2"]), range(1, 3))
-        assert_equal(list(x["BL2"]), range(2, 6, 2))
+        assert_equal(list(x["AL2"]), list(range(1, 3)))
+        assert_equal(list(x["BL2"]), list(range(2, 6, 2)))
 
     def test_ldscore_fromlist(self):
         fh = os.path.join(DIR, "parse_test/test")

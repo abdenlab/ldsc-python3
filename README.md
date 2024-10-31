@@ -79,8 +79,8 @@ Key publications:
    Run the help command to verify that LDSC is installed correctly:
 
    ```bash
-   python ldsc.py -h
-   python munge_sumstats.py -h
+   ldsc -h
+   munge_sumstats -h
    ```
 
    If these commands display help messages with available options, the installation was successful.

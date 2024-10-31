@@ -1,4 +1,4 @@
-import unittest
+from unittest import TestCase
 
 import nose
 import numpy as np
@@ -49,7 +49,7 @@ def test_remove_brackets():
     nose.tools.assert_equal(reg.remove_brackets(x), "asdf")
 
 
-class Test_h2_obs_to_liab(unittest.TestCase):
+class Test_h2_obs_to_liab(TestCase):
 
     def test_bad_data(self):
         assert_raises(ValueError, reg.h2_obs_to_liab, 1, 1, 0.5)
@@ -63,7 +63,7 @@ class Test_h2_obs_to_liab(unittest.TestCase):
         assert_array_almost_equal(x, 0.551907298063)
 
 
-class Test_gencov_obs_to_liab(unittest.TestCase):
+class Test_gencov_obs_to_liab(TestCase):
 
     def test_qt(self):
         self.assertEqual(reg.gencov_obs_to_liab(1, None, None, None, None), 1)
@@ -77,7 +77,7 @@ class Test_gencov_obs_to_liab(unittest.TestCase):
         assert_array_almost_equal(x, 0.551907298063)
 
 
-class Test_Hsq_1D(unittest.TestCase):
+class Test_Hsq_1D(TestCase):
 
     def setUp(self):
         self.chisq = np.ones((4, 1)) * 4
@@ -133,7 +133,7 @@ class Test_Hsq_1D(unittest.TestCase):
         assert_array_almost_equal(agg, 0)
 
 
-class Test_Coef(unittest.TestCase):
+class Test_Coef(TestCase):
 
     def setUp(self):
         self.hsq1 = 0.2
@@ -180,7 +180,7 @@ class Test_Coef(unittest.TestCase):
         assert_array_almost_equal(self.hsq_int.ratio, 0)
 
 
-class Test_Hsq_2D(unittest.TestCase):
+class Test_Hsq_2D(TestCase):
 
     def setUp(self):
         self.chisq = np.ones((17, 1)) * 4
@@ -203,7 +203,7 @@ class Test_Hsq_2D(unittest.TestCase):
         hsq.summary(["asdf", "qwer"])
 
 
-class Test_Gencov_1D(unittest.TestCase):
+class Test_Gencov_1D(TestCase):
 
     def setUp(self):
         self.z1 = np.ones((4, 1)) * 4
@@ -278,7 +278,7 @@ class Test_Gencov_1D(unittest.TestCase):
         assert_array_almost_equal(agg, 0)
 
 
-class Test_Gencov_2D(unittest.TestCase):
+class Test_Gencov_2D(TestCase):
 
     def setUp(self):
         self.ld = np.abs(np.random.normal(size=100).reshape((50, 2))) + 2
@@ -352,7 +352,7 @@ class Test_Gencov_2D(unittest.TestCase):
         assert_array_almost_equal(gencov.tot_cov, hsq.tot_cov)
 
 
-class Test_RG_2D(unittest.TestCase):
+class Test_RG_2D(TestCase):
 
     def setUp(self):
         self.ld = np.abs(np.random.normal(size=100).reshape((50, 2))) + 2
@@ -387,7 +387,7 @@ class Test_RG_2D(unittest.TestCase):
         assert np.abs(self.rg.rg_ratio + 1) < 0.01
 
 
-class Test_RG_Bad(unittest.TestCase):
+class Test_RG_Bad(TestCase):
 
     def test_negative_h2(self):
         ld = np.arange(50).reshape((50, 1)) + 0.1

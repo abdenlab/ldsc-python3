@@ -1,5 +1,5 @@
 import os
-import unittest
+from unittest import TestCase
 
 import numpy as np
 import pandas as pd
@@ -55,7 +55,7 @@ def test_frq_parser():
     assert_array_equal(x.FRQ, [0.01, 0.1, 0.3, 0.2, 0.2, 0.2, 0.01, 0.03])
 
 
-class Test_ldscore(unittest.TestCase):
+class Test_ldscore(TestCase):
 
     def test_ldscore(self):
         x = ps.ldscore(os.path.join(DIR, "parse_test/test"))
@@ -79,7 +79,7 @@ class Test_ldscore(unittest.TestCase):
         assert_raises(ValueError, ps.ldscore_fromlist, [fh, os.path.join(DIR, "parse_test/test2")])
 
 
-class Test_M(unittest.TestCase):
+class Test_M(TestCase):
 
     def test_bad_M(self):
         assert_raises(ValueError, ps.M, os.path.join(DIR, "parse_test/test_bad"))
@@ -101,7 +101,7 @@ class Test_M(unittest.TestCase):
         assert_array_equal(x, np.hstack((ps.M(fh), ps.M(fh))))
 
 
-class Test_Fam(unittest.TestCase):
+class Test_Fam(TestCase):
 
     def test_fam(self):
         fam = ps.PlinkFAMFile(os.path.join(DIR, "plink_test/plink.fam"))
@@ -113,7 +113,7 @@ class Test_Fam(unittest.TestCase):
         assert_raises(ValueError, ps.PlinkFAMFile, os.path.join(DIR, "plink_test/plink.bim"))
 
 
-class Test_Bim(unittest.TestCase):
+class Test_Bim(TestCase):
 
     def test_bim(self):
         bim = ps.PlinkBIMFile(os.path.join(DIR, "plink_test/plink.bim"))

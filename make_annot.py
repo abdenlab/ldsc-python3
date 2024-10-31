@@ -42,7 +42,7 @@ def make_annot_files(args, bed_for_annot):
         df_annot.to_csv(args.annot_file, sep="\t", index=False)
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--gene-set-file", type=str, help="a file of gene names, one line per gene.")
     parser.add_argument(
@@ -84,3 +84,7 @@ if __name__ == "__main__":
             bed_for_annot = bed_for_annot.merge()
 
     make_annot_files(args, bed_for_annot)
+
+
+if __name__ == "__main__":
+    main()

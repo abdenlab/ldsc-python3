@@ -1,4 +1,4 @@
-import unittest
+from unittest import TestCase
 
 import nose
 import numpy as np
@@ -25,7 +25,7 @@ log = Mock()
 args = munge.parser.parse_args("")
 
 
-class test_p_to_z(unittest.TestCase):
+class test_p_to_z(TestCase):
 
     def setUp(self):
         self.N = pd.Series([1, 2, 3])
@@ -36,7 +36,7 @@ class test_p_to_z(unittest.TestCase):
         assert_allclose(munge.p_to_z(self.P, self.N), self.Z, atol=1e-5)
 
 
-class test_check_median(unittest.TestCase):
+class test_check_median(TestCase):
 
     def setUp(self):
         self.x = pd.Series([1, 2, 3])
@@ -49,7 +49,7 @@ class test_check_median(unittest.TestCase):
         nose.tools.assert_raises(ValueError, munge.check_median, self.x, 0, 0.1, "TEST")
 
 
-class test_process_n(unittest.TestCase):
+class test_process_n(TestCase):
 
     def setUp(self):
         self.dat = pd.DataFrame(["rs1", "rs2", "rs3"], columns=["SNP"])
@@ -136,7 +136,7 @@ def test_filter_alleles():
     assert_series_equal(x, y)
 
 
-class test_allele_merge(unittest.TestCase):
+class test_allele_merge(TestCase):
 
     def setUp(self):
         self.dat = pd.DataFrame(np.transpose([["a", "b", "c"], ["A", "T", "C"], ["C", "G", "A"]]))
@@ -152,7 +152,7 @@ class test_allele_merge(unittest.TestCase):
         assert_frame_equal(x, answer)
 
 
-class test_parse_dat(unittest.TestCase):
+class test_parse_dat(TestCase):
 
     def setUp(self):
         dat = pd.DataFrame()
@@ -216,7 +216,7 @@ def test_get_compression_gzip():
     nose.tools.eq_(x, None)
 
 
-class test_parse_flag_cnames(unittest.TestCase):
+class test_parse_flag_cnames(TestCase):
 
     def setUp(self):
         self.args = munge.parser.parse_args("")
@@ -258,7 +258,7 @@ class test_parse_flag_cnames(unittest.TestCase):
         nose.tools.assert_raises(ValueError, munge.parse_flag_cnames, log, self.args)
 
 
-class test_cname_map(unittest.TestCase):
+class test_cname_map(TestCase):
 
     def setUp(self):
         pass
@@ -282,7 +282,7 @@ class test_cname_map(unittest.TestCase):
         self.assertEqual(x["N"], "FOOBAR")
 
 
-class test_end_to_end(unittest.TestCase):
+class test_end_to_end(TestCase):
 
     def setUp(self):
         self.args = munge.parser.parse_args("")

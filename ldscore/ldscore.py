@@ -1,423 +1,604 @@
+"""
+LD Score Calculation Module.
+
+This module provides classes and functions for calculating linkage disequilibrium (LD) scores,
+which are useful in genetic studies for understanding the correlation structure of genetic variants.
+
+Classes:
+    GenotypeArrayInMemory: Base class for genotype data handling in memory.
+    PlinkBEDFile: Class for handling PLINK .bed genotype files.
+
+Functions:
+    get_block_lefts(coords, max_dist): Compute indices of leftmost SNPs within a specified distance.
+    block_left_to_right(block_left): Convert block left indices to block right indices.
+
+(c) 2015 Brendan Bulik-Sullivan and Hilary Finucane
+(c) 2024 Thomas Reimonn
+"""
+
+from typing import Callable, Optional, Tuple
+
 import bitarray as ba
 import numpy as np
 
 
-def getBlockLefts(coords, max_dist):
+def get_block_lefts(coords: np.ndarray, max_dist: float) -> np.ndarray:
     """
-    Converts coordinates + max block length to the a list of coordinates of the leftmost
-    SNPs to be included in blocks.
+    Compute indices of the leftmost SNPs within a specified maximum distance.
 
-    Parameters
-    ----------
-    coords : array
-        Array of coordinates. Must be sorted.
-    max_dist : float
-        Maximum distance between SNPs included in the same window.
+    Args:
+        coords (np.ndarray): Array of genomic coordinates (must be sorted).
+        max_dist (float): Maximum distance between SNPs to be included in the same window.
 
-    Returns
-    -------
-    block_left : 1D np.ndarray with same length as block_left
-        block_left[j] :=  min{k | dist(j, k) < max_dist}.
+    Returns:
+        np.ndarray: Array where each element is the index of the leftmost SNP included
+                    in the LD score calculation for the corresponding SNP.
 
+    Raises:
+        ValueError: If coords is not a one-dimensional array.
     """
+    if coords.ndim != 1:
+        raise ValueError("coords must be a one-dimensional array.")
     M = len(coords)
+    block_left = np.zeros(M, dtype=int)
     j = 0
-    block_left = np.zeros(M)
     for i in range(M):
         while j < M and abs(coords[j] - coords[i]) > max_dist:
             j += 1
-
         block_left[i] = j
-
     return block_left
 
 
-def block_left_to_right(block_left):
+def block_left_to_right(block_left: np.ndarray) -> np.ndarray:
     """
-    Converts block lefts to block rights.
+    Convert block left indices to block right indices.
 
-    Parameters
-    ----------
-    block_left : array
-        Array of block lefts.
+    Args:
+        block_left (np.ndarray): Array of block left indices.
 
-    Returns
-    -------
-    block_right : 1D np.ndarray with same length as block_left
-        block_right[j] := max {k | block_left[k] <= j}
-
+    Returns:
+        np.ndarray: Array where each element is the index of the rightmost SNP included
+                    in the LD score calculation for the corresponding SNP.
     """
     M = len(block_left)
+    block_right = np.zeros(M, dtype=int)
     j = 0
-    block_right = np.zeros(M)
     for i in range(M):
         while j < M and block_left[j] <= i:
             j += 1
-
         block_right[i] = j
-
     return block_right
 
 
-class __GenotypeArrayInMemory__(object):
+class GenotypeArrayInMemory:
     """
-    Parent class for various classes containing interfaces for files with genotype
-    matrices, e.g., plink .bed files, etc
+    Base class for genotype data handling in memory.
+
+    This class provides methods to read genotype data, filter SNPs and individuals,
+    and compute LD scores.
+
+    Attributes:
+        m (int): Number of SNPs.
+        n (int): Number of individuals.
+        df (np.ndarray): SNP metadata array (e.g., chromosome, SNP ID, base pair position).
+        colnames (list): Column names for the SNP metadata.
+        maf_min (float): Minimum minor allele frequency for filtering.
+        geno (bitarray.bitarray): Bitarray representing genotype data.
+        kept_snps (list): Indices of SNPs kept after filtering.
+        freq (np.ndarray): Allele frequencies of the kept SNPs.
+        maf (np.ndarray): Minor allele frequencies of the kept SNPs.
+        sqrtpq (np.ndarray): Square root of p * q for each SNP.
     """
 
-    def __init__(self, fname, n, snp_list, keep_snps=None, keep_indivs=None, mafMin=None):
+    def __init__(
+        self,
+        fname: str,
+        n: int,
+        snp_list,
+        keep_snps: Optional[np.ndarray] = None,
+        keep_indivs: Optional[np.ndarray] = None,
+        maf_min: Optional[float] = None,
+    ) -> None:
+        """
+        Initialize the GenotypeArrayInMemory object.
+
+        Args:
+            fname (str): Filename of the genotype data.
+            n (int): Number of individuals.
+            snp_list: SNP list object containing SNP metadata.
+            keep_snps (Optional[np.ndarray]): Indices of SNPs to keep.
+            keep_indivs (Optional[np.ndarray]): Indices of individuals to keep.
+            maf_min (Optional[float]): Minimum minor allele frequency for filtering.
+
+        Raises:
+            ValueError: If filtering results in zero individuals or SNPs remaining.
+        """
         self.m = len(snp_list.IDList)
         self.n = n
         self.keep_snps = keep_snps
         self.keep_indivs = keep_indivs
         self.df = np.array(snp_list.df[["CHR", "SNP", "BP", "CM"]])
         self.colnames = ["CHR", "SNP", "BP", "CM"]
-        self.mafMin = mafMin if mafMin is not None else 0
-        self._currentSNP = 0
-        (self.nru, self.geno) = self.__read__(fname, self.m, n)
-        # filter individuals
-        if keep_indivs is not None:
-            keep_indivs = np.array(keep_indivs, dtype="int")
-            if np.any(keep_indivs > self.n):
-                raise ValueError("keep_indivs indices out of bounds")
+        self.maf_min = maf_min if maf_min is not None else 0.0
+        self._current_snp = 0
 
-            (self.geno, self.m, self.n) = self.__filter_indivs__(self.geno, keep_indivs, self.m, self.n)
+        self.nru, self.geno = self._read(fname, self.m, n)
 
-            if self.n > 0:
-                print("After filtering, {n} individuals remain".format(n=self.n))
+        # Filter individuals
+        if self.keep_indivs is not None:
+            self.geno, self.m, self.n = self._filter_indivs(self.geno, self.keep_indivs, self.m, self.n)
+            if self.n == 0:
+                raise ValueError("After filtering, no individuals remain.")
             else:
-                raise ValueError("After filtering, no individuals remain")
+                print(f"After filtering, {self.n} individuals remain.")
 
-        # filter SNPs
-        if keep_snps is not None:
-            keep_snps = np.array(keep_snps, dtype="int")
-            if np.any(keep_snps > self.m):  # if keep_snps is None, this returns False
-                raise ValueError("keep_snps indices out of bounds")
-
-        (self.geno, self.m, self.n, self.kept_snps, self.freq) = self.__filter_snps_maf__(
-            self.geno, self.m, self.n, self.mafMin, keep_snps
+        # Filter SNPs
+        self.geno, self.m, self.n, self.kept_snps, self.freq = self._filter_snps_maf(
+            self.geno, self.m, self.n, self.maf_min, self.keep_snps
         )
-
-        if self.m > 0:
-            print("After filtering, {m} SNPs remain".format(m=self.m))
+        if self.m == 0:
+            raise ValueError("After filtering, no SNPs remain.")
         else:
-            raise ValueError("After filtering, no SNPs remain")
+            print(f"After filtering, {self.m} SNPs remain.")
 
         self.df = self.df[self.kept_snps, :]
-        self.maf = np.minimum(self.freq, np.ones(self.m) - self.freq)
-        self.sqrtpq = np.sqrt(self.freq * (np.ones(self.m) - self.freq))
-        self.df = np.c_[self.df, self.maf]
+        self.maf = np.minimum(self.freq, 1.0 - self.freq)
+        self.sqrtpq = np.sqrt(self.freq * (1.0 - self.freq))
+        self.df = np.column_stack((self.df, self.maf))
         self.colnames.append("MAF")
 
-    def __read__(self, fname, m, n):
-        raise NotImplementedError
+    def _read(self, fname: str, m: int, n: int) -> Tuple[int, ba.bitarray]:
+        """
+        Read genotype data from a file.
 
-    def __filter_indivs__(geno, keep_indivs, m, n):
-        raise NotImplementedError
+        Args:
+            fname (str): Filename of the genotype data.
+            m (int): Number of SNPs.
+            n (int): Number of individuals.
 
-    def __filter_maf_(geno, m, n, maf):
-        raise NotImplementedError
+        Returns:
+            Tuple[int, ba.bitarray]: Tuple containing the number of units (nru) and
+                                     the genotype bitarray.
 
-    def ldScoreVarBlocks(self, block_left, c, annot=None):
-        """Computes an unbiased estimate of L2(j) for j=1,..,M."""
-        func = lambda x: self.__l2_unbiased__(x, self.n)
-        snp_getter = self.nextSNPs
-        return self.__corSumVarBlocks__(block_left, c, func, snp_getter, annot)
+        Raises:
+            NotImplementedError: Must be implemented in subclasses.
+        """
+        raise NotImplementedError("Subclasses must implement the _read method.")
 
-    def ldScoreBlockJackknife(self, block_left, c, annot=None, jN=10):
+    def _filter_indivs(
+        self, geno: ba.bitarray, keep_indivs: np.ndarray, m: int, n: int
+    ) -> Tuple[ba.bitarray, int, int]:
+        """
+        Filter individuals from the genotype data.
+
+        Args:
+            geno (ba.bitarray): Genotype bitarray.
+            keep_indivs (np.ndarray): Indices of individuals to keep.
+            m (int): Number of SNPs.
+            n (int): Number of individuals.
+
+        Returns:
+            Tuple[ba.bitarray, int, int]: Tuple containing the filtered genotype bitarray,
+                                          number of SNPs, and new number of individuals.
+
+        Raises:
+            NotImplementedError: Must be implemented in subclasses.
+        """
+        raise NotImplementedError("Subclasses must implement the _filter_indivs method.")
+
+    def _filter_snps_maf(
+        self,
+        geno: ba.bitarray,
+        m: int,
+        n: int,
+        maf_min: float,
+        keep_snps: Optional[np.ndarray],
+    ) -> Tuple[ba.bitarray, int, int, list, np.ndarray]:
+        """
+        Filter SNPs based on minor allele frequency (MAF) and SNP indices.
+
+        Args:
+            geno (ba.bitarray): Genotype bitarray.
+            m (int): Number of SNPs.
+            n (int): Number of individuals.
+            maf_min (float): Minimum minor allele frequency.
+            keep_snps (Optional[np.ndarray]): Indices of SNPs to keep.
+
+        Returns:
+            Tuple containing:
+                - ba.bitarray: Filtered genotype bitarray.
+                - int: Number of polymorphic SNPs.
+                - int: Number of individuals.
+                - list: Indices of kept SNPs.
+                - np.ndarray: Allele frequencies of kept SNPs.
+        """
+        raise NotImplementedError("Subclasses must implement the _filter_snps_maf method.")
+
+    def ld_score_var_blocks(self, block_left: np.ndarray, c: int, annot: Optional[np.ndarray] = None) -> np.ndarray:
+        """
+        Compute an unbiased estimate of LD scores using variable block sizes.
+
+        Args:
+            block_left (np.ndarray): Array of block left indices.
+            c (int): Chunk size.
+            annot (Optional[np.ndarray]): SNP annotations (shape: (m, n_a)).
+
+        Returns:
+            np.ndarray: LD scores (shape: (m, n_a)).
+        """
+        func = lambda x: self._l2_unbiased(x, self.n)
+        snp_getter = self.next_snps
+        return self._cor_sum_var_blocks(block_left, c, func, snp_getter, annot)
+
+    def ld_score_block_jackknife(
+        self, block_left: np.ndarray, c: int, annot: Optional[np.ndarray] = None, jn: int = 10
+    ) -> np.ndarray:
+        """
+        Compute LD scores using block jackknife.
+
+        Args:
+            block_left (np.ndarray): Array of block left indices.
+            c (int): Chunk size.
+            annot (Optional[np.ndarray]): SNP annotations.
+            jn (int): Number of jackknife blocks.
+
+        Returns:
+            np.ndarray: LD scores with jackknife variance estimates.
+        """
         func = lambda x: np.square(x)
-        snp_getter = self.nextSNPs
-        return self.__corSumBlockJackknife__(block_left, c, func, snp_getter, annot, jN)
+        snp_getter = self.next_snps
+        return self._cor_sum_block_jackknife(block_left, c, func, snp_getter, annot, jn)
 
-    def __l2_unbiased__(self, x, n):
-        denom = n - 2 if n > 2 else n  # allow n<2 for testing purposes
+    @staticmethod
+    def _l2_unbiased(x: np.ndarray, n: int) -> np.ndarray:
+        """
+        Compute an unbiased estimate of squared correlation coefficients.
+
+        Args:
+            x (np.ndarray): Correlation coefficients.
+            n (int): Number of individuals.
+
+        Returns:
+            np.ndarray: Unbiased estimate of squared correlation coefficients.
+
+        Notes:
+            The unbiased estimator is calculated as:
+                l2_unbiased = x^2 - (1 - x^2) / (n - 2)
+        """
+        denom = n - 2 if n > 2 else n  # Allow n < 2 for testing purposes
         sq = np.square(x)
         return sq - (1 - sq) / denom
 
-    # general methods for calculating sums of Pearson correlation coefficients
-    def __corSumVarBlocks__(self, block_left, c, func, snp_getter, annot=None):
+    def _cor_sum_var_blocks(
+        self,
+        block_left: np.ndarray,
+        c: int,
+        func: Callable[[np.ndarray], np.ndarray],
+        snp_getter: Callable[[int], np.ndarray],
+        annot: Optional[np.ndarray] = None,
+    ) -> np.ndarray:
         """
-        Parameters
-        ----------
-        block_left : np.ndarray with shape (M, )
-            block_left[i] = index of leftmost SNP included in LD Score of SNP i.
-            if c > 1, then only entries that are multiples of c are examined, and it is
-            assumed that block_left[a*c+i] = block_left[a*c], except at
-            the beginning of the chromosome where the 0th SNP is included in the window.
+        General method for calculating sums of transformed Pearson correlation coefficients.
 
-        c : int
-            Chunk size.
-        func : function
-            Function to be applied to the genotype correlation matrix. Before dotting with
-            annot. Examples: for biased L2, np.square. For biased L4,
-            lambda x: np.square(np.square(x)). For L1, lambda x: x.
-        snp_getter : function(int)
-            The method to be used to get the next SNPs (normalized genotypes? Normalized
-            genotypes with the minor allele as reference allele? etc)
-        annot: numpy array with shape (m,n_a)
-            SNP annotations.
+        Args:
+            block_left (np.ndarray): Array of block left indices.
+            c (int): Chunk size.
+            func (Callable[[np.ndarray], np.ndarray]): Function to apply to the correlation matrix.
+            snp_getter (Callable[[int], np.ndarray]): Function to retrieve SNPs.
+            annot (Optional[np.ndarray]): SNP annotations (shape: (m, n_a)).
 
-        Returns
-        -------
-        cor_sum : np.ndarray with shape (M, num_annots)
-            Estimates.
-
+        Returns:
+            np.ndarray: Summed values after applying the function and weighting by annotations.
         """
         m, n = self.m, self.n
-        block_sizes = np.array(np.arange(m) - block_left)
-        block_sizes = np.ceil(block_sizes / c) * c
         if annot is None:
             annot = np.ones((m, 1))
         else:
-            annot_m = annot.shape[0]
-            if annot_m != self.m:
-                raise ValueError("Incorrect number of SNPs in annot")
+            if annot.shape[0] != m:
+                raise ValueError("Incorrect number of SNPs in annotations.")
 
-        n_a = annot.shape[1]  # number of annotations
+        n_a = annot.shape[1]  # Number of annotations
         cor_sum = np.zeros((m, n_a))
-        # b = index of first SNP for which SNP 0 is not included in LD Score
-        b = np.nonzero(block_left > 0)
-        if np.any(b):
-            b = b[0][0]
-        else:
-            b = m
-        b = int(np.ceil(b / c) * c)  # round up to a multiple of c
+        block_sizes = np.array(np.arange(m) - block_left)
+        block_sizes = np.ceil(block_sizes / c) * c
+
+        b = np.nonzero(block_left > 0)[0]
+        b = b[0] if b.size > 0 else m
+        b = int(np.ceil(b / c) * c)
         if b > m:
             c = 1
             b = m
-        l_A = 0  # l_A := index of leftmost SNP in matrix A
+
+        l_a = 0  # Index of leftmost SNP in matrix A
         A = snp_getter(b)
-        rfuncAB = np.zeros((b, c))
-        rfuncBB = np.zeros((c, c))
-        # chunk inside of block
-        for l_B in range(0, b, c):  # l_B := index of leftmost SNP in matrix B
-            B = A[:, l_B : l_B + c]
-            np.dot(A.T, B / n, out=rfuncAB)
-            rfuncAB = func(rfuncAB)
-            cor_sum[l_A : l_A + b, :] += np.dot(rfuncAB, annot[l_B : l_B + c, :])
-        # chunk to right of block
+        rfunc_ab = np.zeros((b, c))
+        rfunc_bb = np.zeros((c, c))
+
+        # Process chunks inside the block
+        for l_b in range(0, b, c):
+            B = A[:, l_b : l_b + c]
+            np.dot(A.T, B / n, out=rfunc_ab)
+            rfunc_ab = func(rfunc_ab)
+            cor_sum[l_a : l_a + b, :] += rfunc_ab @ annot[l_b : l_b + c, :]
+
+        # Process chunks to the right of the block
         b0 = b
         md = int(c * np.floor(m / c))
         end = md + 1 if md != m else md
-        for l_B in range(b0, end, c):
-            # check if the annot matrix is all zeros for this block + chunk
-            # this happens w/ sparse categories (i.e., pathways)
-            # update the block
+
+        for l_b in range(b0, end, c):
             old_b = b
-            b = int(block_sizes[l_B])
-            if l_B > b0 and b > 0:
-                # block_size can't increase more than c
-                # block_size can't be less than c unless it is zero
-                # both of these things make sense
+            b = int(block_sizes[l_b])
+            if l_b > b0 and b > 0:
                 A = np.hstack((A[:, old_b - b + c : old_b], B))
-                l_A += old_b - b + c
-            elif l_B == b0 and b > 0:
+                l_a += old_b - b + c
+            elif l_b == b0 and b > 0:
                 A = A[:, b0 - b : b0]
-                l_A = b0 - b
-            elif b == 0:  # no SNPs to left in window, e.g., after a sequence gap
-                A = np.array(()).reshape((n, 0))
-                l_A = l_B
-            if l_B == md:
+                l_a = b0 - b
+            elif b == 0:
+                A = np.empty((n, 0))
+                l_a = l_b
+            if l_b == md:
                 c = m - md
-                rfuncAB = np.zeros((b, c))
-                rfuncBB = np.zeros((c, c))
+                rfunc_ab = np.zeros((b, c))
+                rfunc_bb = np.zeros((c, c))
             if b != old_b:
-                rfuncAB = np.zeros((b, c))
+                rfunc_ab = np.zeros((b, c))
 
             B = snp_getter(c)
-            p1 = np.all(annot[l_A : l_A + b, :] == 0)
-            p2 = np.all(annot[l_B : l_B + c, :] == 0)
-            if p1 and p2:
+            if np.all(annot[l_a : l_a + b, :] == 0) and np.all(annot[l_b : l_b + c, :] == 0):
                 continue
 
-            np.dot(A.T, B / n, out=rfuncAB)
-            rfuncAB = func(rfuncAB)
-            cor_sum[l_A : l_A + b, :] += np.dot(rfuncAB, annot[l_B : l_B + c, :])
-            cor_sum[l_B : l_B + c, :] += np.dot(annot[l_A : l_A + b, :].T, rfuncAB).T
-            np.dot(B.T, B / n, out=rfuncBB)
-            rfuncBB = func(rfuncBB)
-            cor_sum[l_B : l_B + c, :] += np.dot(rfuncBB, annot[l_B : l_B + c, :])
+            np.dot(A.T, B / n, out=rfunc_ab)
+            rfunc_ab = func(rfunc_ab)
+            cor_sum[l_a : l_a + b, :] += rfunc_ab @ annot[l_b : l_b + c, :]
+            cor_sum[l_b : l_b + c, :] += (annot[l_a : l_a + b, :].T @ rfunc_ab).T
+            np.dot(B.T, B / n, out=rfunc_bb)
+            rfunc_bb = func(rfunc_bb)
+            cor_sum[l_b : l_b + c, :] += rfunc_bb @ annot[l_b : l_b + c, :]
 
         return cor_sum
 
+    def next_snps(self, b: int, minor_ref: Optional[bool] = None) -> np.ndarray:
+        """
+        Retrieve the next b SNPs from the genotype data.
 
-class PlinkBEDFile(__GenotypeArrayInMemory__):
+        Args:
+            b (int): Number of SNPs to retrieve.
+            minor_ref (Optional[bool]): Whether to flip reference alleles to the minor allele.
+
+        Returns:
+            np.ndarray: Matrix of normalized genotypes (shape: (n, b)).
+
+        Raises:
+            ValueError: If b is not a positive integer or if insufficient SNPs remain.
+        """
+        raise NotImplementedError("Subclasses must implement the next_snps method.")
+
+
+class PlinkBEDFile(GenotypeArrayInMemory):
     """
-    Interface for Plink .bed format
+    Class for handling PLINK .bed genotype files.
+
+    This class provides methods to read PLINK .bed files, filter data, and compute LD scores.
     """
 
-    def __init__(self, fname, n, snp_list, keep_snps=None, keep_indivs=None, mafMin=None):
+    def __init__(
+        self,
+        fname: str,
+        n: int,
+        snp_list,
+        keep_snps: Optional[np.ndarray] = None,
+        keep_indivs: Optional[np.ndarray] = None,
+        maf_min: Optional[float] = None,
+    ) -> None:
+        """
+        Initialize the PlinkBEDFile object.
+
+        Args:
+            fname (str): Filename of the .bed file.
+            n (int): Number of individuals.
+            snp_list: SNP list object containing SNP metadata.
+            keep_snps (Optional[np.ndarray]): Indices of SNPs to keep.
+            keep_indivs (Optional[np.ndarray]): Indices of individuals to keep.
+            maf_min (Optional[float]): Minimum minor allele frequency for filtering.
+        """
         self._bedcode = {
             2: ba.bitarray("11"),
             9: ba.bitarray("10"),
             1: ba.bitarray("01"),
             0: ba.bitarray("00"),
         }
-
-        __GenotypeArrayInMemory__.__init__(
-            self,
+        super().__init__(
             fname,
             n,
             snp_list,
             keep_snps=keep_snps,
             keep_indivs=keep_indivs,
-            mafMin=mafMin,
+            maf_min=maf_min,
         )
 
-    def __read__(self, fname, m, n):
+    def _read(self, fname: str, m: int, n: int) -> Tuple[int, ba.bitarray]:
+        """
+        Read genotype data from a PLINK .bed file.
+
+        Args:
+            fname (str): Filename of the .bed file.
+            m (int): Number of SNPs.
+            n (int): Number of individuals.
+
+        Returns:
+            Tuple[int, ba.bitarray]: Number of units (nru) and genotype bitarray.
+
+        Raises:
+            ValueError: If the file format is incorrect or the magic number is unrecognized.
+            IOError: If the .bed file is not in SNP-major mode.
+        """
         if not fname.endswith(".bed"):
-            raise ValueError(".bed filename must end in .bed")
+            raise ValueError("Filename must end with '.bed'.")
 
-        fh = open(fname, "rb")
-        magicNumber = ba.bitarray(endian="little")
-        magicNumber.fromfile(fh, 2)
-        bedMode = ba.bitarray(endian="little")
-        bedMode.fromfile(fh, 1)
-        e = (4 - n % 4) if n % 4 != 0 else 0
-        nru = n + e
-        self.nru = nru
-        # check magic number
-        if magicNumber != ba.bitarray("0011011011011000"):
-            raise IOError("Magic number from Plink .bed file not recognized")
+        with open(fname, "rb") as fh:
+            magic_number = ba.bitarray(endian="little")
+            magic_number.fromfile(fh, 2)
+            bed_mode = ba.bitarray(endian="little")
+            bed_mode.fromfile(fh, 1)
+            e = (4 - n % 4) if n % 4 != 0 else 0
+            nru = n + e
 
-        if bedMode != ba.bitarray("10000000"):
-            raise IOError("Plink .bed file must be in default SNP-major mode")
+            # Check magic number
+            if magic_number != ba.bitarray("0011011011011000"):
+                raise IOError("Unrecognized magic number in PLINK .bed file.")
 
-        # check file length
-        self.geno = ba.bitarray(endian="little")
-        self.geno.fromfile(fh)
-        self.__test_length__(self.geno, self.m, self.nru)
-        return (self.nru, self.geno)
+            if bed_mode != ba.bitarray("10000000"):
+                raise IOError("PLINK .bed file must be in default SNP-major mode.")
 
-    def __test_length__(self, geno, m, nru):
-        exp_len = 2 * m * nru
-        real_len = len(geno)
-        if real_len != exp_len:
-            s = "Plink .bed file has {n1} bits, expected {n2}"
-            raise IOError(s.format(n1=real_len, n2=exp_len))
+            # Read genotype data
+            geno = ba.bitarray(endian="little")
+            geno.fromfile(fh)
+            self._test_length(geno, m, nru)
+            return nru, geno
 
-    def __filter_indivs__(self, geno, keep_indivs, m, n):
+    @staticmethod
+    def _test_length(geno: ba.bitarray, m: int, nru: int) -> None:
+        """
+        Verify the length of the genotype bitarray.
+
+        Args:
+            geno (ba.bitarray): Genotype bitarray.
+            m (int): Number of SNPs.
+            nru (int): Number of units (number of individuals plus padding).
+
+        Raises:
+            IOError: If the actual length does not match the expected length.
+        """
+        expected_len = 2 * m * nru
+        actual_len = len(geno)
+        if actual_len != expected_len:
+            raise IOError(f"PLINK .bed file has {actual_len} bits; expected {expected_len} bits.")
+
+    def _filter_indivs(
+        self, geno: ba.bitarray, keep_indivs: np.ndarray, m: int, n: int
+    ) -> Tuple[ba.bitarray, int, int]:
+        """
+        Filter individuals from the genotype data.
+
+        Args:
+            geno (ba.bitarray): Genotype bitarray.
+            keep_indivs (np.ndarray): Indices of individuals to keep.
+            m (int): Number of SNPs.
+            n (int): Number of individuals.
+
+        Returns:
+            Tuple[ba.bitarray, int, int]: Filtered genotype bitarray, number of SNPs, and new n.
+
+        Raises:
+            ValueError: If keep_indivs indices are out of bounds.
+        """
+        if np.any(keep_indivs >= n):
+            raise ValueError("keep_indivs indices out of bounds.")
+
         n_new = len(keep_indivs)
         e = (4 - n_new % 4) if n_new % 4 != 0 else 0
         nru_new = n_new + e
         nru = self.nru
         z = ba.bitarray(m * 2 * nru_new, endian="little")
         z.setall(0)
-        for e, i in enumerate(keep_indivs):
-            z[2 * e :: 2 * nru_new] = geno[2 * i :: 2 * nru]
-            z[2 * e + 1 :: 2 * nru_new] = geno[2 * i + 1 :: 2 * nru]
-
+        for idx, i in enumerate(keep_indivs):
+            z[2 * idx :: 2 * nru_new] = geno[2 * i :: 2 * nru]
+            z[2 * idx + 1 :: 2 * nru_new] = geno[2 * i + 1 :: 2 * nru]
         self.nru = nru_new
-        return (z, m, n_new)
+        return z, m, n_new
 
-    def __filter_snps_maf__(self, geno, m, n, mafMin, keep_snps):
+    def _filter_snps_maf(
+        self,
+        geno: ba.bitarray,
+        m: int,
+        n: int,
+        maf_min: float,
+        keep_snps: Optional[np.ndarray],
+    ) -> Tuple[ba.bitarray, int, int, list, np.ndarray]:
         """
-        Credit to Chris Chang and the Plink2 developers for this algorithm
-        Modified from plink_filter.c
-        https://github.com/chrchang/plink-ng/blob/master/plink_filter.c
+        Filter SNPs based on MAF and specified SNP indices.
 
-        Genotypes are read forwards (since we are cheating and using endian="little")
+        Args:
+            geno (ba.bitarray): Genotype bitarray.
+            m (int): Number of SNPs.
+            n (int): Number of individuals.
+            maf_min (float): Minimum minor allele frequency.
+            keep_snps (Optional[np.ndarray]): Indices of SNPs to keep.
 
-        A := (genotype) & 1010...
-        B := (genotype) & 0101...
-        C := (A >> 1) & B
-
-        Then
-
-        a := A.count() = missing ct + hom major ct
-        b := B.count() = het ct + hom major ct
-        c := C.count() = hom major ct
-
-        Which implies that
-
-        missing ct = a - c
-        # of indivs with nonmissing genotype = n - a + c
-        major allele ct = b + c
-        major allele frequency = (b+c)/(2*(n-a+c))
-        het ct + missing ct = a + b - 2*c
-
-        Why does bitarray not have >> ????
-
+        Returns:
+            Tuple containing:
+                - ba.bitarray: Filtered genotype bitarray.
+                - int: Number of polymorphic SNPs.
+                - int: Number of individuals.
+                - list: Indices of kept SNPs.
+                - np.ndarray: Allele frequencies of kept SNPs.
         """
         nru = self.nru
         m_poly = 0
-        y = ba.bitarray()
+        filtered_geno = ba.bitarray(endian="little")
         if keep_snps is None:
             keep_snps = range(m)
         kept_snps = []
         freq = []
-        for e, j in enumerate(keep_snps):
+        for idx, j in enumerate(keep_snps):
             z = geno[2 * nru * j : 2 * nru * (j + 1)]
             A = z[0::2]
-            a = A.count()
             B = z[1::2]
+            a = A.count()
             b = B.count()
             c = (A & B).count()
-            major_ct = b + c  # number of copies of the major allele
-            n_nomiss = n - a + c  # number of individuals with nonmissing genotypes
+            major_ct = b + c
+            n_nomiss = n - a + c
             f = major_ct / (2 * n_nomiss) if n_nomiss > 0 else 0
-            het_miss_ct = a + b - 2 * c  # remove SNPs that are only either het or missing
-            if np.minimum(f, 1 - f) > mafMin and het_miss_ct < n:
+            het_miss_ct = a + b - 2 * c
+            if min(f, 1 - f) > maf_min and het_miss_ct < n:
                 freq.append(f)
-                y += z
+                filtered_geno += z
                 m_poly += 1
                 kept_snps.append(j)
+        return filtered_geno, m_poly, n, kept_snps, np.array(freq)
 
-        return (y, m_poly, n, kept_snps, freq)
-
-    def nextSNPs(self, b, minorRef=None):
+    def next_snps(self, b: int, minor_ref: Optional[bool] = None) -> np.ndarray:
         """
-        Unpacks the binary array of genotypes and returns an n x b matrix of floats of
-        normalized genotypes for the next b SNPs, where n := number of samples.
+        Retrieve the next b SNPs from the genotype data.
 
-        Parameters
-        ----------
-        b : int
-            Number of SNPs to return.
-        minorRef: bool, default None
-            Should we flip reference alleles so that the minor allele is the reference?
-            (This is useful for computing l1 w.r.t. minor allele).
+        Args:
+            b (int): Number of SNPs to retrieve.
+            minor_ref (Optional[bool]): Whether to flip reference alleles to the minor allele.
 
-        Returns
-        -------
-        X : np.array with dtype float64 with shape (n, b), where n := number of samples
-            Matrix of genotypes normalized to mean zero and variance one. If minorRef is
-            not None, then the minor allele will be the positive allele (i.e., two copies
-            of the minor allele --> a positive number).
+        Returns:
+            np.ndarray: Matrix of normalized genotypes (shape: (n, b)).
 
+        Raises:
+            ValueError: If b is not a positive integer or if insufficient SNPs remain.
         """
+        if not isinstance(b, int) or b <= 0:
+            raise ValueError("b must be a positive integer.")
+        if self._current_snp + b > self.m:
+            remaining = self.m - self._current_snp
+            raise ValueError(f"{b} SNPs requested; only {remaining} SNPs remain.")
 
-        try:
-            b = int(b)
-            if b <= 0:
-                raise ValueError("b must be > 0")
-        except TypeError:
-            raise TypeError("b must be an integer")
-
-        if self._currentSNP + b > self.m:
-            s = "{b} SNPs requested, {k} SNPs remain"
-            raise ValueError(s.format(b=b, k=(self.m - self._currentSNP)))
-
-        c = self._currentSNP
+        c = self._current_snp
         n = self.n
         nru = self.nru
-        slice = self.geno[2 * c * nru : 2 * (c + b) * nru]
-        X = np.array(list(slice.decode(self._bedcode)), dtype="float64").reshape((b, nru)).T
-        X = X[0:n, :]
-        Y = np.zeros(X.shape)
-        for j in range(0, b):
-            newsnp = X[:, j]
-            ii = newsnp != 9
-            avg = np.mean(newsnp[ii])
-            newsnp[np.logical_not(ii)] = avg
-            denom = np.std(newsnp)
+        slice_start = 2 * c * nru
+        slice_end = 2 * (c + b) * nru
+        geno_slice = self.geno[slice_start:slice_end]
+        X = np.array(list(geno_slice.decode(self._bedcode)), dtype="float64").reshape((b, nru)).T
+        X = X[:n, :]
+        Y = np.zeros_like(X)
+        for j in range(b):
+            snp = X[:, j]
+            valid_idx = snp != 9
+            avg = np.mean(snp[valid_idx])
+            snp[~valid_idx] = avg
+            denom = np.std(snp)
             if denom == 0:
-                denom = 1
-
-            if minorRef is not None and self.freq[self._currentSNP + j] > 0.5:
-                denom = denom * -1
-
-            Y[:, j] = (newsnp - avg) / denom
-
-        self._currentSNP += b
+                denom = 1.0
+            if minor_ref is not None and self.freq[self._current_snp + j] > 0.5:
+                denom *= -1
+            Y[:, j] = (snp - avg) / denom
+        self._current_snp += b
         return Y

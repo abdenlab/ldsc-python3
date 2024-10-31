@@ -11,8 +11,7 @@ Author: [Your Name]
 """
 
 import os
-import unittest
-from typing import Any, List
+from unittest import TestCase
 
 import numpy as np
 import pandas as pd
@@ -63,7 +62,7 @@ def get_attr(attr: str):
     return lambda obj: getattr(obj, attr, float("nan"))
 
 
-class TestSumstatsFunctions(unittest.TestCase):
+class TestSumstatsFunctions(TestCase):
     """
     Unit tests for individual functions in sumstats.py.
     """
@@ -261,7 +260,7 @@ class TestSumstatsFunctions(unittest.TestCase):
 
 @attr("rg")
 @attr("slow")
-class TestGeneticCorrelationStatistical(unittest.TestCase):
+class TestGeneticCorrelationStatistical(TestCase):
     """
     Statistical tests for genetic correlation estimation.
     """
@@ -318,7 +317,7 @@ class TestGeneticCorrelationStatistical(unittest.TestCase):
 
 @attr("h2")
 @attr("slow")
-class TestHeritabilityStatistical(unittest.TestCase):
+class TestHeritabilityStatistical(TestCase):
     """
     Statistical tests for heritability estimation.
     """
@@ -379,7 +378,7 @@ class TestHeritabilityStatistical(unittest.TestCase):
     # Additional tests for category-specific heritability and other statistics can be added here.
 
 
-class TestEstimateFunctions(unittest.TestCase):
+class TestEstimateFunctions(TestCase):
     """
     Tests for the estimate_h2 and estimate_rg functions.
     """
